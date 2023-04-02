@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PicturesDateFixer.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Spacing="5"
+            Padding="30,30"
+            HorizontalOptions="Center">
+
+            <Label Text="Folder to search on the root of the sd card :" />
+            <Entry 
+                x:Name="txtSearchFolder"
+                Placeholder="Folder to search on the root of the sd card"
+                Text="Catas"
+                HorizontalTextAlignment="Center"/>
+            
+            <Button
+                x:Name="btnGetSDFolder"
+                Text="Get Folder"
+                Clicked="btnFindSDPath"
+                HorizontalOptions="Center" />
+
+            <Label 
+                x:Name="lblFolder" 
+                Text="-" 
+                HorizontalOptions="Center"/>
+            
+            <CollectionView x:Name="cvDrives">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Button Text="{Binding Name}" Clicked="cvButton_Clicked" Padding="0,5,0,0"/>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <StackLayout x:Name="slLabels" IsVisible="false">
+                <Label Text="> App will browse in the following folders :"/>
+                <Label Text="• ./DCIM/Camera" FontSize="Micro"/>
+                <Label Text="• ./DCIM/NBP_2019" FontSize="Micro"/>
+                <Label Text="• ./DCIM/Screenshots" FontSize="Micro"/>
+                <Label Text="• ./DCIM/Test EXIF" FontSize="Micro"/>
+                <Label Text="• ./WhatsApp/Media/Whatsapp Images" FontSize="Micro"/>
+            </StackLayout>
+
+            <Label                    
+                x:Name="lblRootFolder"
+                Margin="0,30"
+                Text="Root Folder (SD Card)"
+                IsVisible="false"/>
+                
+            <StackLayout 
+                x:Name="slDatePicker"
+                Orientation="Horizontal" 
+                HorizontalOptions="Center">
+                
+                <CheckBox
+                    x:Name="chkUseDatePickerStart"
+                    IsChecked="false"
+                    IsVisible="false"/>
+            
+                <DatePicker
+                    x:Name="dpPickerStart"
+                    HorizontalOptions="Center" Format="dd/MM/yyyy"
+                    Date="11/03/2022"
+                    IsVisible="false"/>
+
+                <CheckBox
+                    x:Name="chkUseDatePickerEnd"
+                    IsChecked="false"
+                    IsVisible="false"/>
+
+                <DatePicker
+                    x:Name="dpPickerEnd"
+                    HorizontalOptions="Center" Format="dd/MM/yyyy"
+                    Date="11/03/2022"
+                    IsVisible="false"/>
+            </StackLayout>
+
+            <Button
+                x:Name="btnSearchFolder"
+                Text="Search Folders"
+                Clicked="btnSearchFolders_Clicked"
+                HorizontalOptions="Center"
+                IsVisible="false"/>
+
+            <ProgressBar 
+                x:Name="prgBar"
+                IsVisible="false"
+                Progress="0.0" />
+
+            <Label
+                x:Name="lblCurrentFolder"
+                HorizontalOptions="Center"
+                IsVisible="false"/>
+            
+            <Label
+                x:Name="lblProgress"
+                HorizontalOptions="Center"
+                IsVisible="false"/>
+
+            <Button
+                x:Name="btnLog"
+                Text="Log"
+                IsVisible="false"
+                Clicked="btnLog_Clicked"/>
+
+            <ImageButton
+                x:Name="btnDewitt"
+                Source="dewitt2.png"
+                IsVisible="false"
+                HeightRequest="200"
+                Clicked="btnDewitt_Clicked" />
+
+            <StackLayout 
+                x:Name="slOverwrite"
+                Orientation="Horizontal"
+                IsVisible="false"
+                HorizontalOptions="Center">
+
+                <CheckBox x:Name="chkOverwrite" IsChecked="False"/>
+                <Label x:Name="lblOverwrite" Text="Overwrite" Margin="0,10"></Label>
+            </StackLayout>
+
+            <ProgressBar 
+                x:Name="prgBarEXIF"
+                IsVisible="false"
+                ProgressColor="DarkRed"
+                Progress="0.0" />
+
+            <Label
+                x:Name="lblProgressEXIF"
+                HorizontalOptions="Center"
+                IsVisible="false"/>
+
+
+            <CollectionView x:Name="cvResults" Header="First 30 Files found :">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Padding="10,5,10,10" Margin="0,0,0,2" CornerRadius="3">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <Label Grid.Row="0" Text="{Binding Name}" FontSize="Micro" Padding="0,0,0,0"/>
+                                <Label Grid.Row="1" Text="{Binding CreatedStr}" FontSize="Micro" Padding="0,0,0,0" HorizontalOptions="End"/>
+                                <Label Grid.Row="2" Text="{Binding ModifiedStr}" FontSize="Micro" Padding="0,0,0,0" HorizontalOptions="End"/>
+                                <Label Grid.Row="3" Text="{Binding DateTimeOriginalStr}" FontSize="Micro" Padding="0,0,0,0" HorizontalOptions="End"/>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
