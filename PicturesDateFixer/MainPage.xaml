@@ -6,155 +6,188 @@
     <ScrollView>
         <VerticalStackLayout
             Spacing="5"
-            Padding="30,30"
+            Padding="10,10"
             HorizontalOptions="Center">
 
-            <Label Text="Folder to search on the root of the sd card :" />
-            <Entry 
+            <!-- Menu -->
+            <Grid x:Name="slMenu" IsVisible="True" HorizontalOptions="Center">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="20"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="90"/>
+                </Grid.ColumnDefinitions>
+
+                <ImageButton Grid.Row="0" Grid.Column="0" x:Name="btnMenuMain"     Source="main.png"              IsVisible="true" WidthRequest="70" BackgroundColor="Transparent" Clicked="btnMenuMain_Clicked"/>
+                <ImageButton Grid.Row="0" Grid.Column="1" x:Name="btnMenuSettings" Source="settings_disabled.png" IsVisible="true" WidthRequest="70" BackgroundColor="Transparent" Clicked="btnMenuSettings_Clicked"/>
+                <ImageButton Grid.Row="0" Grid.Column="2" x:Name="btnMenuResults"  Source="results_disabled.png"  IsVisible="false" WidthRequest="70" BackgroundColor="Transparent" Clicked="btnMenuResults_Clicked"/>
+
+                <Label x:Name="lblMenuMain"     Grid.Row="1" Grid.Column="0" Text="Main"     IsVisible="true"  FontSize="Micro" HorizontalTextAlignment="Center"/>
+                <Label x:Name="lblMenuSettings" Grid.Row="1" Grid.Column="1" Text="Settings" IsVisible="true"  FontSize="Micro" HorizontalTextAlignment="Center"/>
+                <Label x:Name="lblMenuResults"  Grid.Row="1" Grid.Column="2" Text="Results"  IsVisible="false" FontSize="Micro" HorizontalTextAlignment="Center"/>
+            </Grid>
+            <!-- Main -->
+            <StackLayout x:Name="slMain" IsVisible="True" Margin="10">
+                <Label Text="Folder to search on the root of the sd card :" />
+                <Entry 
                 x:Name="txtSearchFolder"
                 Placeholder="Folder to search on the root of the sd card"
                 Text="Catas"
                 HorizontalTextAlignment="Center"/>
-            
-            <Button
+
+                <Button
                 x:Name="btnGetSDFolder"
-                Text="Get Folder"
+                Text="Search SD Mount Point"
                 Clicked="btnFindSDPath"
                 HorizontalOptions="Center" />
 
-            <Label 
+                <Label 
                 x:Name="lblFolder" 
                 Text="-" 
                 HorizontalOptions="Center"/>
-            
-            <CollectionView x:Name="cvDrives">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Button Text="{Binding Name}" Clicked="cvButton_Clicked" Padding="0,5,0,0"/>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
 
-            <StackLayout x:Name="slLabels" IsVisible="false">
-                <Label Text="> App will browse in the following folders :"/>
-                <Label Text="• ./DCIM/Camera" FontSize="Micro"/>
-                <Label Text="• ./DCIM/NBP_2019" FontSize="Micro"/>
-                <Label Text="• ./DCIM/Screenshots" FontSize="Micro"/>
-                <Label Text="• ./DCIM/Test EXIF" FontSize="Micro"/>
-                <Label Text="• ./WhatsApp/Media/Whatsapp Images" FontSize="Micro"/>
-            </StackLayout>
+                <CollectionView x:Name="cvDrives">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Button Text="{Binding Name}" Clicked="cvButton_Clicked" Padding="0,5,0,0"/>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
 
-            <Label                    
+                <Label                    
                 x:Name="lblRootFolder"
                 Margin="0,30"
                 Text="Root Folder (SD Card)"
                 IsVisible="false"/>
-                
-            <StackLayout 
+
+                <StackLayout 
                 x:Name="slDatePicker"
                 Orientation="Horizontal" 
                 HorizontalOptions="Center">
-                
-                <CheckBox
+
+                    <CheckBox
                     x:Name="chkUseDatePickerStart"
                     IsChecked="false"
                     IsVisible="false"/>
-            
-                <DatePicker
+
+                    <DatePicker
                     x:Name="dpPickerStart"
                     HorizontalOptions="Center" Format="dd/MM/yyyy"
                     Date="11/03/2022"
                     IsVisible="false"/>
 
-                <CheckBox
+                    <CheckBox
                     x:Name="chkUseDatePickerEnd"
                     IsChecked="false"
                     IsVisible="false"/>
 
-                <DatePicker
+                    <DatePicker
                     x:Name="dpPickerEnd"
                     HorizontalOptions="Center" Format="dd/MM/yyyy"
                     Date="11/03/2022"
                     IsVisible="false"/>
-            </StackLayout>
+                </StackLayout>
 
-            <Button
+                <Button
                 x:Name="btnSearchFolder"
                 Text="Search Folders"
                 Clicked="btnSearchFolders_Clicked"
                 HorizontalOptions="Center"
                 IsVisible="false"/>
 
-            <ProgressBar 
+                <ProgressBar 
                 x:Name="prgBar"
                 IsVisible="false"
                 Progress="0.0" />
 
-            <Label
+                <Label
                 x:Name="lblCurrentFolder"
                 HorizontalOptions="Center"
                 IsVisible="false"/>
-            
-            <Label
+
+                <Label
                 x:Name="lblProgress"
                 HorizontalOptions="Center"
                 IsVisible="false"/>
 
-            <Button
+                <Button
                 x:Name="btnLog"
-                Text="Log"
+                Text="Log Results"
                 IsVisible="false"
                 Clicked="btnLog_Clicked"/>
 
-            <ImageButton
+                <ImageButton
                 x:Name="btnDewitt"
                 Source="dewitt2.png"
                 IsVisible="false"
                 HeightRequest="200"
                 Clicked="btnDewitt_Clicked" />
 
-            <StackLayout 
+                <StackLayout 
                 x:Name="slOverwrite"
                 Orientation="Horizontal"
                 IsVisible="false"
                 HorizontalOptions="Center">
 
-                <CheckBox x:Name="chkOverwrite" IsChecked="False"/>
-                <Label x:Name="lblOverwrite" Text="Overwrite" Margin="0,10"></Label>
-            </StackLayout>
+                    <CheckBox x:Name="chkOverwrite" IsChecked="False"/>
+                    <Label x:Name="lblOverwrite" Text="Overwrite" Margin="0,10"></Label>
 
-            <ProgressBar 
+                    <CheckBox x:Name="chkForReal" IsChecked="False"/>
+                    <Label x:Name="lblForReal" Text="Do it for real" Margin="0,10"></Label>
+                </StackLayout>
+
+                <ProgressBar 
                 x:Name="prgBarEXIF"
                 IsVisible="false"
                 ProgressColor="DarkRed"
                 Progress="0.0" />
 
-            <Label
+                <Label
                 x:Name="lblProgressEXIF"
                 HorizontalOptions="Center"
                 IsVisible="false"/>
+            </StackLayout>
 
-
-            <CollectionView x:Name="cvResults" Header="First 30 Files found :">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Frame Padding="10,5,10,10" Margin="0,0,0,2" CornerRadius="3">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
-                                </Grid.RowDefinitions>
-                                <Label Grid.Row="0" Text="{Binding Name}" FontSize="Micro" Padding="0,0,0,0"/>
-                                <Label Grid.Row="1" Text="{Binding CreatedStr}" FontSize="Micro" Padding="0,0,0,0" HorizontalOptions="End"/>
-                                <Label Grid.Row="2" Text="{Binding ModifiedStr}" FontSize="Micro" Padding="0,0,0,0" HorizontalOptions="End"/>
-                                <Label Grid.Row="3" Text="{Binding DateTimeOriginalStr}" FontSize="Micro" Padding="0,0,0,0" HorizontalOptions="End"/>
-                            </Grid>
-                        </Frame>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <!-- Settings -->
+            <StackLayout x:Name="slSettings" IsVisible="False" Margin="10">
+                <Label Text="Settings"/>
+            </StackLayout>
+            
+            <!-- Results -->
+            <StackLayout x:Name="slResults" IsVisible="False" Margin="10">
+                <CollectionView x:Name="cvResults" EmptyView="No file found." Header="First xx Files found :">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame Padding="2,5,2,10" Margin="0,0,0,2" CornerRadius="3">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.ColumnSpan="3" HorizontalOptions="Center"  Text="{Binding Name}" FontSize="Small" Padding="0,0,0,0"/>
+                                    
+                                    <Label Grid.Row="1" Grid.Column="0" Text="Created :" FontSize="Micro" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="1" Grid.Column="1" Text="Modified :" FontSize="Micro" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="1" Grid.Column="2" Text="Date Time Original :" FontSize="Micro" Padding="0,0,0,0"/>
+                                    
+                                    <Label Grid.Row="2" Grid.Column="0" Text="{Binding CreatedStr2}" FontSize="Micro" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="2" Grid.Column="1" Text="{Binding ModifiedStr2}" FontSize="Micro" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="2" Grid.Column="2" Text="{Binding DateTimeOriginalStr2}" FontSize="Micro" Padding="0,0,0,0"/>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </StackLayout>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

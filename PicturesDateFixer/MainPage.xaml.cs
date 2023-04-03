@@ -25,16 +25,21 @@ public partial class MainPage : ContentPage
 	{
 		InitializeComponent();
 
-        // Add the target in the SD Card
-        //targetFolderList.Add("DCIM/Camera");
-        targetFolderList.Add("DCIM/NBP_2019");
-        //targetFolderList.Add("DCIM/Screenshots");
-        //targetFolderList.Add("DCIM/Test EXIF");
+        // Add the target in the SD Card (second part is default)
+        string prefFolderList = Preferences.Get("targetFolderList", "" +
+                                                    //"DCIM/Camera;" +
+                                                    "DCIM/NBP_2019;" +
+                                                    //"DCIM/Screenshots;" +
+                                                    //"DCIM/Test EXIF;" +
+                                                    //"WhatsApp/Media/Whatsapp Images"
+                                                    "").ToString();
 
-        //targetFolderList.Add("WhatsApp/Media/Whatsapp Images");
+        foreach (string aFolder in prefFolderList.Split(";"))
+            if (aFolder.Trim().Length > 0)
+                targetFolderList.Add(aFolder);
     }
 
-    // Click on the button to find SD Card Mount Name
+    // FIND SD CARD NAME ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     private void btnFindSDPath(object sender, EventArgs e)
 	{
         // Drives which will be found -- /storage/emulated/0/Android/data is the internal storage
@@ -70,7 +75,10 @@ public partial class MainPage : ContentPage
         lblFolder.Text = $"'{txtSearchFolder.Text}' found in {targetDrives.Count} drive{(targetDrives.Count > 1 ? "s":"")}";
 
         // Hide the SD Card searcher Part 2
-        slLabels.IsVisible = false;
+        slResults.IsVisible = false;
+        cvResults.ItemsSource = null;
+        lblMenuResults.IsVisible = false;
+        btnMenuResults.IsVisible = false;
         btnSearchFolder.IsVisible = false;
         btnLog.IsVisible = false;
         btnDewitt.IsVisible = false;
@@ -99,7 +107,6 @@ public partial class MainPage : ContentPage
 
         // Display the SD Card searcher Part 2
         lblRootFolder.Text = selectedDrive.Name;
-        slLabels.IsVisible = true;
         btnSearchFolder.IsVisible = true;
         chkUseDatePickerStart.IsVisible = true;
         dpPickerStart.IsVisible = true;
@@ -110,10 +117,18 @@ public partial class MainPage : ContentPage
         lblProgress.IsVisible = true;
 
         // Clear the results
+        slResults.IsVisible = false;
         cvResults.ItemsSource = null;
+        btnLog.IsVisible = false;
+        btnDewitt.IsVisible = false;
+        slOverwrite.IsVisible = false;
+        prgBarEXIF.IsVisible = false;
+        lblProgressEXIF.IsVisible = false;
+        lblMenuResults.IsVisible = false;
+        btnMenuResults.IsVisible = false;
     }
 
-    // Search the target folder based on the filters
+    // FOLDER SEARCH ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     private async void btnSearchFolders_Clicked(object sender, EventArgs e)
     {
         // File extensions to search for
@@ -134,6 +149,16 @@ public partial class MainPage : ContentPage
         lblCurrentFolder.Text = "";
         prgBar.Progress = 0;
         lblProgress.Text = "";
+
+        slResults.IsVisible = false;
+        cvResults.ItemsSource = null;
+        btnLog.IsVisible = false;
+        btnDewitt.IsVisible = false;
+        slOverwrite.IsVisible = false;
+        prgBarEXIF.IsVisible = false;
+        lblProgressEXIF.IsVisible = false;
+        lblMenuResults.IsVisible = false;
+        btnMenuResults.IsVisible = false;
 
         // For each Target Folder specified in the main
         foreach (string aTargetFolder in targetFolderList)
@@ -259,13 +284,14 @@ public partial class MainPage : ContentPage
             cvResults.Header = $"{foundFiles.Count} {(foundFiles.Count > 1 ? "files" : "file")} found - showing first 10";
             cvResults.ItemsSource = foundFiles.Take(10);
 
-            // Show the Log and Dewitt Button
+            // Show the rest of the form
             btnLog.IsVisible = true;
             btnDewitt.IsVisible = true;
             slOverwrite.IsVisible = true;
             prgBarEXIF.IsVisible = true;
             lblProgressEXIF.IsVisible = true;
-
+            lblMenuResults.IsVisible = true;
+            btnMenuResults.IsVisible = true;
             // DO IT !
             // Install Nuget plugin.maui.audio and put the file in the Resource/Raw folder
             IAudioPlayer audioPlayerTick;
@@ -308,10 +334,10 @@ public partial class MainPage : ContentPage
             }
         }
 
-        await DisplayAlert("Export Done", $"File Export is done in {logFile}. Errors in {logFileError} ", "Kewl");
+        await DisplayAlert("Export Done", $"File Export is done in {logFile}.\r\n Errors in {logFileError} ", "Kewl");
     }
 
-    // Add EXIF Data
+    // ADD EXIF DATA ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     private async void btnDewitt_Clicked(object sender, EventArgs e)
     {
         int cnt = 0;
@@ -345,6 +371,7 @@ public partial class MainPage : ContentPage
                         // Part II : Add EXIF data. Method depends on the file type
                         if (aDriveFile.Extension.ToLower() == ".jpg" || aDriveFile.Extension.ToLower() == ".jpeg")
                         {
+                            /*
                             if (aDriveFile.Name == "2019_10_05_173730_JCS.JPG")
                             {
                                 DateTime test = new DateTime(2023, 04, 02);
@@ -361,13 +388,22 @@ public partial class MainPage : ContentPage
                                 }
                             }
                             else
-                            { 
+                            {
+                            */
+                            
                                 var fileJpg = ImageFile.FromFile(aDriveFile.FullPath);
                                 fileJpg.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
-                                fileJpg.Save(aDriveFile.FullPath);
-                            }
+                                // Save for real
+                                if (chkForReal.IsChecked)
+                                    fileJpg.Save(aDriveFile.FullPath);
+                            //}
                             cnt++;
-                            successEXIFList.Add(new ExceptionCustom { Drive = aDriveFile.FullPath, ExceptionMessage = $"{aDriveFile.Extension.ToLower()} => {newDate.Value.ToString("yyyy/MM/dd HH:mm:ss")}"});
+                            successEXIFList.Add(new ExceptionCustom { 
+                                Drive = aDriveFile.FullPath,
+                                ExceptionMessage = $"{aDriveFile.Extension.ToLower()} : " +
+                                $"from {(newDate == null ? "null" : newDate.Value.ToString("yyyy/MM/dd"))}" +
+                                $"to => {newDate.Value.ToString("yyyy/MM/dd HH:mm:ss")}"
+                            });
                         }
                         else if (aDriveFile.Extension.ToLower() == ".png")
                         {
@@ -377,13 +413,25 @@ public partial class MainPage : ContentPage
                             //filePng.Properties.Set(ExifTag.PNGCreationTime, "2021:06:30 13:37:00");
                             //filePng.Save(pathPNG);
                             cnt++;
-                            successEXIFList.Add(new ExceptionCustom { Drive = aDriveFile.FullPath, ExceptionMessage = $"{aDriveFile.Extension.ToLower()} => TO IMPLEMENT" });
+                            successEXIFList.Add(new ExceptionCustom
+                            {
+                                Drive = aDriveFile.FullPath,
+                                ExceptionMessage = $"{aDriveFile.Extension.ToLower()} : " +
+                                $"from {(newDate == null ? "null" : newDate.Value.ToString("yyyy/MM/dd"))}" +
+                                $"to => TO IMPLEMENT"
+                            }); ;
 
                         }
                         else if (aDriveFile.Extension.ToLower() == ".gif")
                         {
                             cnt++;
-                            successEXIFList.Add(new ExceptionCustom { Drive = aDriveFile.FullPath, ExceptionMessage = $"{aDriveFile.Extension.ToLower()} => TO IMPLEMENT" });
+                            successEXIFList.Add(new ExceptionCustom
+                            {
+                                Drive = aDriveFile.FullPath,
+                                ExceptionMessage = $"{aDriveFile.Extension.ToLower()} : " +
+                                $"from {(newDate == null ? "null" : newDate.Value.ToString("yyyy/MM/dd"))}" +
+                                $"to => TO IMPLEMENT"
+                            }); ;
                         }
                     }
                 }
@@ -421,7 +469,7 @@ public partial class MainPage : ContentPage
                 sw.WriteLine($"{anException.Drive}|{anException.ExceptionMessage}");
             }
         }
-        await DisplayAlert("EXIF Tagging Done", $"{cnt} out of {cntTotal} done. {exceptEXIFList.Count} errors loggued in {logFileError} ", "Kewl");
+        await DisplayAlert("EXIF Tagging Done", $"{cnt} out of {cntTotal} done.\r\n {exceptEXIFList.Count} errors loggued in {logFileError} ", "Kewl");
     }
 
     // Extract a Datetime based on the file name
@@ -498,6 +546,49 @@ public partial class MainPage : ContentPage
         }
 
         return newDate;
+    }
+
+    // MENU ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    private void btnMenuMain_Clicked(object sender, EventArgs e)
+    {
+        btnMenuMain.Source = "main.png";
+        btnMenuSettings.Source = "settings_disabled.png";
+        btnMenuResults.Source = "results_disabled.png";
+        
+        btnMenuResults.IsVisible = (foundFiles.Count() != 0);
+        lblMenuResults.IsVisible = (foundFiles.Count() != 0);
+
+        slMain.IsVisible = true;
+        slSettings.IsVisible = false;
+        slResults.IsVisible = false;
+    }
+
+    private void btnMenuSettings_Clicked(object sender, EventArgs e)
+    {
+        btnMenuMain.Source = "main_disabled.png";
+        btnMenuSettings.Source = "settings.png";
+        btnMenuResults.Source = "results_disabled.png";
+
+        btnMenuResults.IsVisible = (foundFiles.Count() != 0);
+        lblMenuResults.IsVisible = (foundFiles.Count() != 0);
+
+        slMain.IsVisible = false;
+        slSettings.IsVisible = true;
+        slResults.IsVisible = false;
+    }
+
+    private void btnMenuResults_Clicked(object sender, EventArgs e)
+    {
+        btnMenuMain.Source = "main_disabled.png";
+        btnMenuSettings.Source = "settings_disabled.png";
+        btnMenuResults.Source = "results.png";
+
+        btnMenuResults.IsVisible = (foundFiles.Count() != 0);
+        lblMenuResults.IsVisible = (foundFiles.Count() != 0);
+
+        slMain.IsVisible = false;
+        slSettings.IsVisible = false;
+        slResults.IsVisible = true;
     }
 }
 

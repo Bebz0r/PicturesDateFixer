@@ -8,6 +8,8 @@ public partial class MainPage
         public string FullPath { get; set; }
         public string Extension { get; set; }
         public DateTime Created { get; set; }
+        public DateTime Modified { get; set; }
+        public DateTime? DateTimeOriginal { get; set; }
         public string CreatedStr
         {
             get
@@ -15,7 +17,7 @@ public partial class MainPage
                 return Created.ToString("dd/MM/yyyy HH:mm:ss");
             }
         }
-        public DateTime Modified { get; set; }
+
         public string ModifiedStr
         {
             get
@@ -24,12 +26,35 @@ public partial class MainPage
             }
         }
 
-        public DateTime? DateTimeOriginal { get; set; }
         public string DateTimeOriginalStr
         {
             get
             {
                 return (DateTimeOriginal == null ? null : DateTimeOriginal.Value.ToString("dd/MM/yyyy HH:mm:ss"));
+            }
+        }
+
+        public string CreatedStr2
+        {
+            get
+            {
+                return Created.ToString("dd/MM/yyyy HH:mm");
+            }
+        }
+
+        public string ModifiedStr2
+        {
+            get
+            {
+                return Modified.ToString("dd/MM/yyyy HH:mm");
+            }
+        }
+
+        public string DateTimeOriginalStr2
+        {
+            get
+            {
+                return (DateTimeOriginal == null ? null : DateTimeOriginal.Value.ToString("dd/MM/yyyy HH:mm"));
             }
         }
 
