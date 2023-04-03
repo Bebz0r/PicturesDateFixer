@@ -1,8 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:mct="clr-namespace:CommunityToolkit.Maui.Behaviors;assembly=CommunityToolkit.Maui"
              x:Class="PicturesDateFixer.MainPage">
 
+    <ContentPage.Behaviors>
+        <mct:StatusBarBehavior StatusBarColor = "#9a0089" />
+    </ContentPage.Behaviors>
+    
     <ScrollView>
         <VerticalStackLayout
             Spacing="5"
@@ -31,23 +36,28 @@
             </Grid>
             <!-- Main -->
             <StackLayout x:Name="slMain" IsVisible="True" Margin="10">
-                <Label Text="Folder to search on the root of the sd card :" />
+                <Label 
+                    Text="Folder to search on the root of the sd card :"
+                    HorizontalOptions="Center"/>
+                
                 <Entry 
-                x:Name="txtSearchFolder"
-                Placeholder="Folder to search on the root of the sd card"
-                Text="Catas"
-                HorizontalTextAlignment="Center"/>
+                    x:Name="txtSearchFolder"
+                    Placeholder="Folder to search on the root of the sd card"
+                    Text="Catas"
+                    HorizontalTextAlignment="Center"/>
 
                 <Button
-                x:Name="btnGetSDFolder"
-                Text="Search SD Mount Point"
-                Clicked="btnFindSDPath"
-                HorizontalOptions="Center" />
+                    Margin="0,0,0,5"
+                    x:Name="btnGetSDFolder"
+                    Text="Search SD Mount Point"
+                    Clicked="btnFindSDPath"
+                    HorizontalOptions="Center" />
 
                 <Label 
-                x:Name="lblFolder" 
-                Text="-" 
-                HorizontalOptions="Center"/>
+                    Margin="0,0,0,5"
+                    x:Name="lblFolder" 
+                    Text="-" 
+                    HorizontalOptions="Center"/>
 
                 <CollectionView x:Name="cvDrives">
                     <CollectionView.ItemTemplate>
@@ -58,97 +68,114 @@
                 </CollectionView>
 
                 <Label                    
-                x:Name="lblRootFolder"
-                Margin="0,30"
-                Text="Root Folder (SD Card)"
-                IsVisible="false"/>
+                    x:Name="lblRootFolder"
+                    Margin="0,30"
+                    Text="Root Folder (SD Card)"
+                    IsVisible="false"/>
 
+                <Label
+                    Margin="0,5,0,0"
+                    x:Name="lblDatePickerTitle"
+                    HorizontalOptions="Center"
+                    Text="EXIF DateTime Original filter :"
+                    IsVisible="false"/>
+                
                 <StackLayout 
-                x:Name="slDatePicker"
-                Orientation="Horizontal" 
-                HorizontalOptions="Center">
+                    x:Name="slDatePicker"
+                    Orientation="Horizontal" 
+                    HorizontalOptions="Center">
 
                     <CheckBox
-                    x:Name="chkUseDatePickerStart"
-                    IsChecked="false"
-                    IsVisible="false"/>
+                        x:Name="chkUseDatePickerStart"
+                        IsChecked="false"
+                        IsVisible="false"/>
 
                     <DatePicker
-                    x:Name="dpPickerStart"
-                    HorizontalOptions="Center" Format="dd/MM/yyyy"
-                    Date="11/03/2022"
-                    IsVisible="false"/>
+                        x:Name="dpPickerStart"
+                        HorizontalOptions="Center" Format="dd/MM/yyyy"
+                        Date="11/03/2022"
+                        IsVisible="false"/>
 
                     <CheckBox
-                    x:Name="chkUseDatePickerEnd"
-                    IsChecked="false"
-                    IsVisible="false"/>
+                        x:Name="chkUseDatePickerEnd"
+                        IsChecked="false"
+                        IsVisible="false"/>
 
                     <DatePicker
-                    x:Name="dpPickerEnd"
-                    HorizontalOptions="Center" Format="dd/MM/yyyy"
-                    Date="11/03/2022"
-                    IsVisible="false"/>
+                        x:Name="dpPickerEnd"
+                        HorizontalOptions="Center" Format="dd/MM/yyyy"
+                        Date="11/03/2022"
+                        IsVisible="false"/>
                 </StackLayout>
 
                 <Button
-                x:Name="btnSearchFolder"
-                Text="Search Folders"
-                Clicked="btnSearchFolders_Clicked"
-                HorizontalOptions="Center"
-                IsVisible="false"/>
+                    x:Name="btnSearchFolder"
+                    Text="Search Folders"
+                    Clicked="btnSearchFolders_Clicked"
+                    HorizontalOptions="Center"
+                    IsVisible="false"/>
 
                 <ProgressBar 
-                x:Name="prgBar"
-                IsVisible="false"
-                Progress="0.0" />
+                    x:Name="prgBar"
+                    IsVisible="false"
+                    Progress="0.0" />
 
                 <Label
-                x:Name="lblCurrentFolder"
-                HorizontalOptions="Center"
-                IsVisible="false"/>
+                    x:Name="lblCurrentFolder"
+                    HorizontalOptions="Center"
+                    IsVisible="false"/>
 
                 <Label
-                x:Name="lblProgress"
-                HorizontalOptions="Center"
-                IsVisible="false"/>
+                    x:Name="lblProgress"
+                    HorizontalOptions="Center"
+                    IsVisible="false"/>
 
                 <Button
-                x:Name="btnLog"
-                Text="Log Results"
-                IsVisible="false"
-                Clicked="btnLog_Clicked"/>
+                    x:Name="btnLog"
+                    Text="Log Results"
+                    IsVisible="false"
+                    Clicked="btnLog_Clicked"/>
 
                 <ImageButton
-                x:Name="btnDewitt"
-                Source="dewitt2.png"
-                IsVisible="false"
-                HeightRequest="200"
-                Clicked="btnDewitt_Clicked" />
+                    x:Name="btnDewitt"
+                    Source="dewitt2.png"
+                    IsVisible="false"
+                    HeightRequest="200"
+                    Clicked="btnDewitt_Clicked"/>
 
                 <StackLayout 
-                x:Name="slOverwrite"
-                Orientation="Horizontal"
-                IsVisible="false"
-                HorizontalOptions="Center">
+                    x:Name="slOverwrite"
+                    Orientation="Horizontal"
+                    IsVisible="false"
+                    HorizontalOptions="Center">
 
-                    <CheckBox x:Name="chkOverwrite" IsChecked="False"/>
-                    <Label x:Name="lblOverwrite" Text="Overwrite" Margin="0,10"></Label>
+                    <CheckBox 
+                        x:Name="chkOverwrite" 
+                        IsChecked="False"/>
+                    <Label 
+                        x:Name="lblOverwrite" 
+                        Text="Overwrite EXIF Data ?" 
+                        Margin="-5,10"/>
 
-                    <CheckBox x:Name="chkForReal" IsChecked="False"/>
-                    <Label x:Name="lblForReal" Text="Do it for real" Margin="0,10"></Label>
+                    <CheckBox 
+                        x:Name="chkForReal"
+                        IsChecked="False"/>
+                    <Label
+                        x:Name="lblForReal" 
+                        Text="Do it for real !" 
+                        Margin="-5,10"/>
                 </StackLayout>
 
                 <ProgressBar 
-                x:Name="prgBarEXIF"
-                IsVisible="false"
-                ProgressColor="DarkRed"
-                Progress="0.0" />
+                    x:Name="prgBarEXIF"
+                    IsVisible="false"
+                    ProgressColor="DarkRed"
+                    Progress="0.0" />
 
                 <Label
-                x:Name="lblProgressEXIF"
-                HorizontalOptions="Center"
-                IsVisible="false"/>
+                    x:Name="lblProgressEXIF"
+                    HorizontalOptions="Center"
+                    IsVisible="false"/>
             </StackLayout>
 
             <!-- Settings -->

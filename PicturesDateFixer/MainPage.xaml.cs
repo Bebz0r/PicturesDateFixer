@@ -14,6 +14,28 @@ namespace PicturesDateFixer;
 
 public partial class MainPage : ContentPage
 {
+    // Change status bar color ? Add the CommunityToolkit.Maui
+    // Then add it in the MauiProgram.cs :
+    // using CommunityToolkit.Maui;
+
+    //public static MauiApp CreateMauiApp()
+    //{
+    //    var builder = MauiApp.CreateBuilder();
+    //    builder
+    //        .UseMauiApp<App>()
+    //        // Initialize the .NET MAUI Community Toolkit by adding the below line of code
+    //        .UseMauiCommunityToolkit()
+    //        [...]
+    //
+    // Then add it to the MainPage.xaml : in the <ContentPage> tag, reference the xaml as mct :
+    // xmlns:mct="clr-namespace:CommunityToolkit.Maui.Behaviors;assembly=CommunityToolkit.Maui"
+    //
+    // Then add the piece of code :
+    // <ContentPage.Behaviors>
+    //      <mct:StatusBarBehavior StatusBarColor = "pink" />
+    // </ContentPage.Behaviors>
+
+
     // Fill which will be found
     List<DriveFile> foundFiles = new List<DriveFile>();
     // Exceptions
@@ -87,6 +109,7 @@ public partial class MainPage : ContentPage
         prgBarEXIF.IsVisible = false;
         lblProgressEXIF.IsVisible = false;
         lblProgressEXIF.Text = "";
+        lblDatePickerTitle.IsVisible = false;
         chkUseDatePickerStart.IsVisible = false;
         dpPickerStart.IsVisible = false;
         chkUseDatePickerEnd.IsVisible = false;
@@ -108,6 +131,7 @@ public partial class MainPage : ContentPage
         // Display the SD Card searcher Part 2
         lblRootFolder.Text = selectedDrive.Name;
         btnSearchFolder.IsVisible = true;
+        lblDatePickerTitle.IsVisible = true;
         chkUseDatePickerStart.IsVisible = true;
         dpPickerStart.IsVisible = true;
         chkUseDatePickerEnd.IsVisible = true;
