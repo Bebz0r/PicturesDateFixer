@@ -9,6 +9,8 @@ using Microsoft.Maui.Controls.Shapes;
 using Plugin.Maui.Audio;
 using ExifLibrary;
 using System.Text.RegularExpressions;
+using CommunityToolkit.Maui.Core.Primitives;
+using CommunityToolkit.Maui.Alerts;
 
 namespace PicturesDateFixer;
 
@@ -40,28 +42,276 @@ public partial class MainPage : ContentPage
     List<DriveFile> foundFiles = new List<DriveFile>();
     // Exceptions
     List<ExceptionCustom> exceptList = new List<ExceptionCustom>();
+
+    // Target Folders Names in Pregs
+    List<String> prefsTargetFolderList = new List<String>();
     // Target Folders Names
     List<String> targetFolderList = new List<String>();
 
     public MainPage()
-	{
-		InitializeComponent();
-
-        // Add the target in the SD Card (second part is default)
-        string prefFolderList = Preferences.Get("targetFolderList", "" +
-                                                    //"DCIM/Camera;" +
-                                                    "DCIM/NBP_2019;" +
-                                                    //"DCIM/Screenshots;" +
-                                                    //"DCIM/Test EXIF;" +
-                                                    //"WhatsApp/Media/Whatsapp Images"
-                                                    "").ToString();
-
-        foreach (string aFolder in prefFolderList.Split(";"))
-            if (aFolder.Trim().Length > 0)
-                targetFolderList.Add(aFolder);
+    {
+        InitializeComponent();
     }
 
-    // FIND SD CARD NAME ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        // Update the collection view preferences
+        RefreshCvPrefs();
+    }
+
+    // MISC AND HELPERS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #region MISC AND HELPERS
+    // Extract a Datetime based on the file name
+    private static DateTime? GetDateTimeFromFileName(string fileWithoutExtension)
+    {
+        // Classic Android File Naming : 20230207_180652.jpg
+        string reAndroid = @"(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})";
+        // Whatsapp Naming : IMG-20180420-WA0001.jpg
+        string reWhatsApp = @"IMG-(\d{4})(\d{2})(\d{2})-WA(\d{4})";
+        // Screenshot : Screenshot_20170614-230912.png
+        string reScreenshot = @"Screenshot_(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})";
+        // NBP
+        string reNBP = @"(\d{4})_(\d{2})_(\d{2})_(\d{2})(\d{2})(\d{2})_JCS";
+        // Other : 20190217194435_1.jpg
+        string reOther = @"(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})_\d";
+
+        Match mAndroid = new Regex(reAndroid).Match(fileWithoutExtension);
+        Match mWhatsApp = new Regex(reWhatsApp).Match(fileWithoutExtension);
+        Match mScreenshot = new Regex(reScreenshot).Match(fileWithoutExtension);
+        Match mNBP = new Regex(reNBP).Match(fileWithoutExtension);
+        Match mOther = new Regex(reOther).Match(fileWithoutExtension);
+
+        DateTime? newDate;
+        if (mAndroid.Success)
+        {
+            int y = int.Parse(mAndroid.Groups[1].Value);
+            int M = int.Parse(mAndroid.Groups[2].Value);
+            int d = int.Parse(mAndroid.Groups[3].Value);
+            int h = int.Parse(mAndroid.Groups[4].Value);
+            int m = int.Parse(mAndroid.Groups[5].Value);
+            int s = int.Parse(mAndroid.Groups[6].Value);
+            newDate = new DateTime(y, M, d, h, m, s);
+        }
+        else if (mWhatsApp.Success)
+        {
+            int y = int.Parse(mWhatsApp.Groups[1].Value);
+            int M = int.Parse(mWhatsApp.Groups[2].Value);
+            int d = int.Parse(mWhatsApp.Groups[3].Value);
+            newDate = new DateTime(y, M, d, 12, 0, 0);
+        }
+        else if (mScreenshot.Success)
+        {
+            int y = int.Parse(mScreenshot.Groups[1].Value);
+            int M = int.Parse(mScreenshot.Groups[2].Value);
+            int d = int.Parse(mScreenshot.Groups[3].Value);
+            int h = int.Parse(mScreenshot.Groups[4].Value);
+            int m = int.Parse(mScreenshot.Groups[5].Value);
+            int s = int.Parse(mScreenshot.Groups[6].Value);
+            newDate = new DateTime(y, M, d, h, m, s);
+        }
+        else if (mNBP.Success)
+        {
+            int y = int.Parse(mNBP.Groups[1].Value);
+            int M = int.Parse(mNBP.Groups[2].Value);
+            int d = int.Parse(mNBP.Groups[3].Value);
+            int h = int.Parse(mNBP.Groups[4].Value);
+            int m = int.Parse(mNBP.Groups[5].Value);
+            int s = int.Parse(mNBP.Groups[6].Value);
+            newDate = new DateTime(y, M, d, h, m, s);
+        }
+        else if (mOther.Success)
+        {
+            int y = int.Parse(mOther.Groups[1].Value);
+            int M = int.Parse(mOther.Groups[2].Value);
+            int d = int.Parse(mOther.Groups[3].Value);
+            int h = int.Parse(mOther.Groups[4].Value);
+            int m = int.Parse(mOther.Groups[5].Value);
+            int s = int.Parse(mOther.Groups[6].Value);
+            newDate = new DateTime(y, M, d, h, m, s);
+        }
+        else
+        {
+            newDate = null;
+        }
+
+        return newDate;
+    }
+    #endregion
+
+    // MENU ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #region MENU
+    private void btnMenuMain_Clicked(object sender, EventArgs e)
+    {
+        btnMenuMain.Source = "main.png";
+        btnMenuSettings.Source = "settings_disabled.png";
+        btnMenuResults.Source = "results_disabled.png";
+
+        btnMenuResults.IsVisible = (foundFiles.Count() != 0);
+        lblMenuResults.IsVisible = (foundFiles.Count() != 0);
+
+        slMain.IsVisible = true;
+        slSettings.IsVisible = false;
+        slResults.IsVisible = false;
+    }
+
+    private void btnMenuSettings_Clicked(object sender, EventArgs e)
+    {
+        btnMenuMain.Source = "main_disabled.png";
+        btnMenuSettings.Source = "settings.png";
+        btnMenuResults.Source = "results_disabled.png";
+
+        btnMenuResults.IsVisible = (foundFiles.Count() != 0);
+        lblMenuResults.IsVisible = (foundFiles.Count() != 0);
+
+        slMain.IsVisible = false;
+        slSettings.IsVisible = true;
+        slResults.IsVisible = false;
+    }
+
+    private void btnMenuResults_Clicked(object sender, EventArgs e)
+    {
+        btnMenuMain.Source = "main_disabled.png";
+        btnMenuSettings.Source = "settings_disabled.png";
+        btnMenuResults.Source = "results.png";
+
+        btnMenuResults.IsVisible = (foundFiles.Count() != 0);
+        lblMenuResults.IsVisible = (foundFiles.Count() != 0);
+
+        slMain.IsVisible = false;
+        slSettings.IsVisible = false;
+        slResults.IsVisible = true;
+    }
+    #endregion
+
+    // PREFS HANDLING ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #region PREFS HANDLING
+    // Read the Prefs and update the collection view
+    private void RefreshCvPrefs()
+    {
+        // Add the target in the SD Card (second part is default)
+        string prefFolderList = Preferences.Get("prefTargetFolderList", "").ToString();
+
+        prefsTargetFolderList = new List<String>();
+        foreach (string aFolder in prefFolderList.Split(";"))
+            if (aFolder.Trim().Length > 0)
+                prefsTargetFolderList.Add(aFolder);
+
+        cvPreferences.ItemsSource = prefsTargetFolderList;
+    }
+
+    // Add Preference Clicked
+    private async void btnAddPref_Clicked(object sender, EventArgs e)
+    {
+        string toAdd = txtAddPref.Text.Trim();
+        if (toAdd.Length > 0)
+        {
+            if (prefsTargetFolderList.Contains(toAdd))
+            {
+                await DisplayAlert("Error", $"'{toAdd}' already exists.", "OK");
+            }
+            else
+            {
+                prefsTargetFolderList.Add(toAdd);
+                txtAddPref.Text = "";
+
+                // Save the Prefs
+                Preferences.Set("prefTargetFolderList", String.Join(";", prefsTargetFolderList.ToArray()));
+
+                // Refresh the Prefs
+                RefreshCvPrefs();
+
+                await DisplayAlert("Done", $"'{toAdd}' added.", "OK");
+            }
+        }
+        else
+        {
+            await DisplayAlert("Error", $"Preference cannot be empty", "OK");
+        }
+    }
+
+    // Default Prefs
+    private async void btnDefaultPref_Clicked(object sender, EventArgs e)
+    {
+        // Add the target in the SD Card (second part is default)
+        Preferences.Set("prefTargetFolderList", "" +
+                                            "DCIM/Camera;" +
+                                            "DCIM/NBP_2019;" +
+                                            "DCIM/Screenshots;" +
+                                            "DCIM/Test EXIF;" +
+                                            "WhatsApp/Media/Whatsapp Images" +
+                                            "");
+        
+        // Refresh the prefs
+        RefreshCvPrefs();
+
+        // Clear the items in targetFolder
+        targetFolderList = new List<String>();
+
+        await DisplayAlert("Default Prefs", $"Preferences have been set to Default.", "OK");
+    }
+
+    // Reset Prefs
+    private async void btnResetPrefs_Clicked(object sender, EventArgs e)
+    {
+        // Set the pref to nothing
+        Preferences.Set("prefTargetFolderList","");
+        
+        // Refresh the prefs
+        RefreshCvPrefs();
+
+        // Clear the items in targetFolder
+        targetFolderList = new List<String>();
+
+        await DisplayAlert("Prefs Reset", $"Preferences have been reset.", "OK");
+    }
+
+    // A Pref checkbox is checked : recalculate the targetFolderList List
+    private void chkPref_Checked(object sender, CheckedChangedEventArgs e)
+    {
+        // Get the checkbox clicked
+        CheckBox theCheckbox = (CheckBox)sender;
+        string theFolder = theCheckbox.ClassId;
+
+        // Checked : Add it if not exist
+        if (theCheckbox.IsChecked)
+        {
+            if (!targetFolderList.Contains(theFolder))
+                targetFolderList.Add(theFolder);
+        }
+        // UnChecked : Remove it if exist
+        else
+        {
+            if (targetFolderList.Contains(theFolder))
+                targetFolderList.Remove(theFolder);
+        }
+    }
+
+    // A Pref delete button is clicked : : remove it and recalculate the targetFolderList List
+    private void btnDeletePref_Clicked(object sender, EventArgs e)
+    {
+        // Get the imagebutton clicked
+        ImageButton theImageButton = (ImageButton)sender;
+        string theFolder = theImageButton.ClassId;
+
+        // Remove it from the preferences
+        if (prefsTargetFolderList.Contains(theFolder))
+            prefsTargetFolderList.Remove(theFolder);
+
+        // Save the Prefs
+        Preferences.Set("prefTargetFolderList", String.Join(";", prefsTargetFolderList.ToArray()));
+
+        // Refresh the Prefs
+        RefreshCvPrefs();
+
+        // Remove it as well if present in the folder list
+        if (targetFolderList.Contains(theFolder))
+            targetFolderList.Remove(theFolder);
+    }
+    #endregion
+
+    // FIND SD CARD NAME ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #region FIND SD CARD NAME
     private void btnFindSDPath(object sender, EventArgs e)
 	{
         // Drives which will be found -- /storage/emulated/0/Android/data is the internal storage
@@ -151,8 +401,10 @@ public partial class MainPage : ContentPage
         lblMenuResults.IsVisible = false;
         btnMenuResults.IsVisible = false;
     }
+    #endregion
 
-    // FOLDER SEARCH ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // FOLDERS SEARCH ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #region FOLDERS SEARCH
     private async void btnSearchFolders_Clicked(object sender, EventArgs e)
     {
         // File extensions to search for
@@ -183,6 +435,9 @@ public partial class MainPage : ContentPage
         lblProgressEXIF.IsVisible = false;
         lblMenuResults.IsVisible = false;
         btnMenuResults.IsVisible = false;
+
+        if (targetFolderList.Count == 0)
+            await DisplayAlert("Alert", "No target folders set. Check in the Settings Panel to add some.", "OK");
 
         // For each Target Folder specified in the main
         foreach (string aTargetFolder in targetFolderList)
@@ -360,8 +615,10 @@ public partial class MainPage : ContentPage
 
         await DisplayAlert("Export Done", $"File Export is done in {logFile}.\r\n Errors in {logFileError} ", "Kewl");
     }
+    #endregion
 
-    // ADD EXIF DATA ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ADD EXIF DATA ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #region ADD EXIF DATA
     private async void btnDewitt_Clicked(object sender, EventArgs e)
     {
         int cnt = 0;
@@ -496,123 +753,7 @@ public partial class MainPage : ContentPage
         await DisplayAlert("EXIF Tagging Done", $"{cnt} out of {cntTotal} done.\r\n {exceptEXIFList.Count} errors loggued in {logFileError} ", "Kewl");
     }
 
-    // Extract a Datetime based on the file name
-    private static DateTime? GetDateTimeFromFileName(string fileWithoutExtension)
-    {
-        // Classic Android File Naming : 20230207_180652.jpg
-        string reAndroid = @"(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})";
-        // Whatsapp Naming : IMG-20180420-WA0001.jpg
-        string reWhatsApp = @"IMG-(\d{4})(\d{2})(\d{2})-WA(\d{4})";
-        // Screenshot : Screenshot_20170614-230912.png
-        string reScreenshot = @"Screenshot_(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})";
-        // NBP
-        string reNBP = @"(\d{4})_(\d{2})_(\d{2})_(\d{2})(\d{2})(\d{2})_JCS";
-        // Other : 20190217194435_1.jpg
-        string reOther = @"(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})_\d";
+    #endregion
 
-        Match mAndroid = new Regex(reAndroid).Match(fileWithoutExtension);
-        Match mWhatsApp = new Regex(reWhatsApp).Match(fileWithoutExtension);
-        Match mScreenshot = new Regex(reScreenshot).Match(fileWithoutExtension);
-        Match mNBP = new Regex(reNBP).Match(fileWithoutExtension);
-        Match mOther = new Regex(reOther).Match(fileWithoutExtension);
-
-        DateTime? newDate;
-        if (mAndroid.Success)
-        {
-            int y = int.Parse(mAndroid.Groups[1].Value);
-            int M = int.Parse(mAndroid.Groups[2].Value);
-            int d = int.Parse(mAndroid.Groups[3].Value);
-            int h = int.Parse(mAndroid.Groups[4].Value);
-            int m = int.Parse(mAndroid.Groups[5].Value);
-            int s = int.Parse(mAndroid.Groups[6].Value);
-            newDate = new DateTime(y, M, d, h, m, s);
-        }
-        else if (mWhatsApp.Success)
-        {
-            int y = int.Parse(mWhatsApp.Groups[1].Value);
-            int M = int.Parse(mWhatsApp.Groups[2].Value);
-            int d = int.Parse(mWhatsApp.Groups[3].Value);
-            newDate = new DateTime(y, M, d, 12, 0, 0);
-        }
-        else if (mScreenshot.Success)
-        {
-            int y = int.Parse(mScreenshot.Groups[1].Value);
-            int M = int.Parse(mScreenshot.Groups[2].Value);
-            int d = int.Parse(mScreenshot.Groups[3].Value);
-            int h = int.Parse(mScreenshot.Groups[4].Value);
-            int m = int.Parse(mScreenshot.Groups[5].Value);
-            int s = int.Parse(mScreenshot.Groups[6].Value);
-            newDate = new DateTime(y, M, d, h, m, s);
-        }
-        else if (mNBP.Success)
-        {
-            int y = int.Parse(mNBP.Groups[1].Value);
-            int M = int.Parse(mNBP.Groups[2].Value);
-            int d = int.Parse(mNBP.Groups[3].Value);
-            int h = int.Parse(mNBP.Groups[4].Value);
-            int m = int.Parse(mNBP.Groups[5].Value);
-            int s = int.Parse(mNBP.Groups[6].Value);
-            newDate = new DateTime(y, M, d, h, m, s);
-        }
-        else if (mOther.Success)
-        {
-            int y = int.Parse(mOther.Groups[1].Value);
-            int M = int.Parse(mOther.Groups[2].Value);
-            int d = int.Parse(mOther.Groups[3].Value);
-            int h = int.Parse(mOther.Groups[4].Value);
-            int m = int.Parse(mOther.Groups[5].Value);
-            int s = int.Parse(mOther.Groups[6].Value);
-            newDate = new DateTime(y, M, d, h, m, s);
-        }
-        else
-        {
-            newDate = null;
-        }
-
-        return newDate;
-    }
-
-    // MENU ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    private void btnMenuMain_Clicked(object sender, EventArgs e)
-    {
-        btnMenuMain.Source = "main.png";
-        btnMenuSettings.Source = "settings_disabled.png";
-        btnMenuResults.Source = "results_disabled.png";
-        
-        btnMenuResults.IsVisible = (foundFiles.Count() != 0);
-        lblMenuResults.IsVisible = (foundFiles.Count() != 0);
-
-        slMain.IsVisible = true;
-        slSettings.IsVisible = false;
-        slResults.IsVisible = false;
-    }
-
-    private void btnMenuSettings_Clicked(object sender, EventArgs e)
-    {
-        btnMenuMain.Source = "main_disabled.png";
-        btnMenuSettings.Source = "settings.png";
-        btnMenuResults.Source = "results_disabled.png";
-
-        btnMenuResults.IsVisible = (foundFiles.Count() != 0);
-        lblMenuResults.IsVisible = (foundFiles.Count() != 0);
-
-        slMain.IsVisible = false;
-        slSettings.IsVisible = true;
-        slResults.IsVisible = false;
-    }
-
-    private void btnMenuResults_Clicked(object sender, EventArgs e)
-    {
-        btnMenuMain.Source = "main_disabled.png";
-        btnMenuSettings.Source = "settings_disabled.png";
-        btnMenuResults.Source = "results.png";
-
-        btnMenuResults.IsVisible = (foundFiles.Count() != 0);
-        lblMenuResults.IsVisible = (foundFiles.Count() != 0);
-
-        slMain.IsVisible = false;
-        slSettings.IsVisible = false;
-        slResults.IsVisible = true;
-    }
 }
 

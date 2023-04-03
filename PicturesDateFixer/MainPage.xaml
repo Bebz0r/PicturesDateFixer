@@ -34,8 +34,10 @@
                 <Label x:Name="lblMenuSettings" Grid.Row="1" Grid.Column="1" Text="Settings" IsVisible="true"  FontSize="Micro" HorizontalTextAlignment="Center"/>
                 <Label x:Name="lblMenuResults"  Grid.Row="1" Grid.Column="2" Text="Results"  IsVisible="false" FontSize="Micro" HorizontalTextAlignment="Center"/>
             </Grid>
+            
             <!-- Main -->
             <StackLayout x:Name="slMain" IsVisible="True" Margin="10">
+                <!-- SD Search -->
                 <Label 
                     Text="Folder to search on the root of the sd card :"
                     HorizontalOptions="Center"/>
@@ -59,6 +61,7 @@
                     Text="-" 
                     HorizontalOptions="Center"/>
 
+                <!-- SD Mount point selector-->
                 <CollectionView x:Name="cvDrives">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
@@ -73,6 +76,7 @@
                     Text="Root Folder (SD Card)"
                     IsVisible="false"/>
 
+                <!-- DateTime Original Filter -->
                 <Label
                     Margin="0,5,0,0"
                     x:Name="lblDatePickerTitle"
@@ -115,6 +119,7 @@
                     HorizontalOptions="Center"
                     IsVisible="false"/>
 
+                <!-- Progress Bar -->
                 <ProgressBar 
                     x:Name="prgBar"
                     IsVisible="false"
@@ -130,12 +135,14 @@
                     HorizontalOptions="Center"
                     IsVisible="false"/>
 
+                <!-- Log -->
                 <Button
                     x:Name="btnLog"
                     Text="Log Results"
                     IsVisible="false"
                     Clicked="btnLog_Clicked"/>
 
+                <!-- Dewitt -->
                 <ImageButton
                     x:Name="btnDewitt"
                     Source="dewitt2.png"
@@ -143,6 +150,7 @@
                     HeightRequest="200"
                     Clicked="btnDewitt_Clicked"/>
 
+                <!-- Dewitt Options -->
                 <StackLayout 
                     x:Name="slOverwrite"
                     Orientation="Horizontal"
@@ -166,6 +174,7 @@
                         Margin="-5,10"/>
                 </StackLayout>
 
+                <!-- Progress Bar -->
                 <ProgressBar 
                     x:Name="prgBarEXIF"
                     IsVisible="false"
@@ -180,7 +189,65 @@
 
             <!-- Settings -->
             <StackLayout x:Name="slSettings" IsVisible="False" Margin="10">
-                <Label Text="Settings"/>
+                <!-- Add new -->
+                <Label 
+                    Text="Add new Folder :"
+                    HorizontalOptions="Center"/>
+
+                <Entry 
+                    x:Name="txtAddPref"
+                    Placeholder="DCIM/Camera"
+                    Text=""
+                    Completed="btnAddPref_Clicked"
+                    HorizontalTextAlignment="Center"/>
+                
+                <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                    <Button
+                        Margin="0,0,10,5"
+                        x:Name="btnAddPref"
+                        Text="Add Pref"
+                        Clicked="btnAddPref_Clicked"
+                        HorizontalOptions="Center" />
+
+                    <Button
+                        Margin="10,0,0,5"
+                        x:Name="btnDefaultPref"
+                        Text="Default Prefs"
+                        Clicked="btnDefaultPref_Clicked"
+                        HorizontalOptions="Center" />
+                    
+                    <Button
+                        Margin="10,0,0,5"
+                        x:Name="btnResetPrefs"
+                        Text="Reset Prefs"
+                        Clicked="btnResetPrefs_Clicked"
+                        HorizontalOptions="Center" />
+                </StackLayout>
+
+                
+                <!-- Pref list -->
+                <Label 
+                    Text="Folder(s) to search :"
+                    HorizontalOptions="Center"/>
+                
+                <CollectionView x:Name="cvPreferences">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="20"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Grid.Column="0"    ClassId="{Binding}" HeightRequest="30" IsChecked="False" CheckedChanged="chkPref_Checked"/>
+                                <Label    Grid.Column="1"    Text="{Binding}"    HeightRequest="30" FontSize="Small" Margin="2,6,0,0" />
+                                <ImageButton Grid.Column="2" ClassId="{Binding}" HeightRequest="30" Source="delete_pref.png" Clicked="btnDeletePref_Clicked"/>
+
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
             </StackLayout>
             
             <!-- Results -->
