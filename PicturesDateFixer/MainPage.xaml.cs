@@ -11,6 +11,7 @@ using ExifLibrary;
 using System.Text.RegularExpressions;
 using CommunityToolkit.Maui.Core.Primitives;
 using CommunityToolkit.Maui.Alerts;
+using Microsoft.Maui.Controls.Compatibility;
 
 namespace PicturesDateFixer;
 
@@ -197,12 +198,16 @@ public partial class MainPage : ContentPage
             if (aFolder.Trim().Length > 0)
                 prefsTargetFolderList.Add(aFolder);
 
-        cvPreferences.ItemsSource = prefsTargetFolderList;
+        cvPreferences.ItemsSource = prefsTargetFolderList.OrderBy(x => x).ToList();
     }
 
     // Add Preference Clicked
     private async void btnAddPref_Clicked(object sender, EventArgs e)
     {
+        // Close Keyboard
+        txtAddPref.IsEnabled = false;
+        txtAddPref.IsEnabled = true;
+
         string toAdd = txtAddPref.Text.Trim();
         if (toAdd.Length > 0)
         {
@@ -264,6 +269,29 @@ public partial class MainPage : ContentPage
         targetFolderList = new List<String>();
 
         await DisplayAlert("Prefs Reset", $"Preferences have been reset.", "OK");
+    }
+
+    // Tick everything TODO
+    private void btnSelectAllPrefs_Clicked(object sender, EventArgs e)
+    {
+        // Check if checking it with code triggers the stuff
+        foreach (string pref in prefsTargetFolderList)
+        { 
+            CheckBox checkbox = (CheckBox)FindByName(pref);
+            if (checkbox != null)
+                checkbox.IsChecked = true;
+        }
+    }
+
+    // Untick everything TODO
+    private void btnSelectNoPrefs_Clicked(object sender, EventArgs e)
+    {
+        foreach (string pref in prefsTargetFolderList)
+        {
+            CheckBox checkbox = (CheckBox)FindByName(pref);
+            if (checkbox != null)
+                checkbox.IsChecked = false;
+        }
     }
 
     // A Pref checkbox is checked : recalculate the targetFolderList List
@@ -459,7 +487,7 @@ public partial class MainPage : ContentPage
                     // Progress
                     cnt++;
                     lblProgress.Text = $"{cnt} / {theFiles.Count()} - {Math.Round((double)cnt / theFiles.Count()*100)}%";
-                    await prgBar.ProgressTo((double)cnt / theFiles.Count(), 100, Easing.Linear);
+                    await prgBar.ProgressTo((double)cnt / theFiles.Count(), 10, Easing.Linear);
 
                     // Only take the files in scope
                     if (validExtensions.Contains(new FileInfo(aFile).Extension.ToLower()))
@@ -482,6 +510,7 @@ public partial class MainPage : ContentPage
                                 ExifProperty tagPng = exifFile.Properties.Get(ExifTag.PNGCreationTime);
                                 if (tagPng != null)
                                 {
+                                    // :
                                     aDriveFile.DateTimeOriginal = DateTime.ParseExact(tagPng.Value.ToString(),
                                                                           "yyyy:MM:dd HH:mm:ss",
                                                                           System.Globalization.CultureInfo.InvariantCulture);
@@ -489,11 +518,6 @@ public partial class MainPage : ContentPage
                             }
                             else if (aDriveFile.Extension.ToLower() == ".jpg" || aDriveFile.Extension.ToLower() == ".jpeg")
                             {
-                                if (aDriveFile.Name == "2019_10_05_173730_JCS.JPG")
-                                {
-                                    int abc = 3;
-                                }
-
                                 ExifProperty tagJpg = exifFile.Properties.Get(ExifTag.DateTimeOriginal);
                                 if (tagJpg != null)
                                 {
@@ -631,7 +655,7 @@ public partial class MainPage : ContentPage
             // Progress
             cntTotal++;
             lblProgressEXIF.Text = $"{cntTotal} / {foundFiles.Count()} - {Math.Round((double)cntTotal / foundFiles.Count() * 100)}%";
-            await prgBarEXIF.ProgressTo((double)cntTotal / foundFiles.Count(), 100, Easing.Linear);
+            await prgBarEXIF.ProgressTo((double)cntTotal / foundFiles.Count(), 10, Easing.Linear);
 
             try
             {
@@ -754,6 +778,5 @@ public partial class MainPage : ContentPage
     }
 
     #endregion
-
 }
 

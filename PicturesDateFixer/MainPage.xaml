@@ -201,33 +201,51 @@
                     Completed="btnAddPref_Clicked"
                     HorizontalTextAlignment="Center"/>
                 
-                <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                <StackLayout 
+                    Margin="0,0,0,10"
+                    Orientation="Horizontal" 
+                    HorizontalOptions="Center" 
+                    Spacing="5">
                     <Button
-                        Margin="0,0,10,5"
                         x:Name="btnAddPref"
                         Text="Add Pref"
                         Clicked="btnAddPref_Clicked"
                         HorizontalOptions="Center" />
 
                     <Button
-                        Margin="10,0,0,5"
                         x:Name="btnDefaultPref"
                         Text="Default Prefs"
                         Clicked="btnDefaultPref_Clicked"
                         HorizontalOptions="Center" />
                     
                     <Button
-                        Margin="10,0,0,5"
                         x:Name="btnResetPrefs"
                         Text="Reset Prefs"
                         Clicked="btnResetPrefs_Clicked"
                         HorizontalOptions="Center" />
                 </StackLayout>
 
-                
+                <StackLayout 
+                    Margin="0,0,0,10"
+                    Orientation="Horizontal"
+                    HorizontalOptions="Center"
+                    Spacing="5">
+                    <Button
+                        x:Name="btnSelectAllPrefs"
+                        Text="Select All"
+                        HorizontalOptions="Center"
+                        Clicked="btnSelectAllPrefs_Clicked"/>
+
+                    <Button
+                        x:Name="btnSelectNoPrefs"
+                        Text="Select None"
+                        HorizontalOptions="Center"
+                        Clicked="btnSelectNoPrefs_Clicked"/>
+                </StackLayout>
+
                 <!-- Pref list -->
                 <Label 
-                    Text="Folder(s) to search :"
+                    Text="- Folder(s) to search -"
                     HorizontalOptions="Center"/>
                 
                 <CollectionView x:Name="cvPreferences">
@@ -240,7 +258,7 @@
                                     <ColumnDefinition Width="20"/>
                                 </Grid.ColumnDefinitions>
 
-                                <CheckBox Grid.Column="0"    ClassId="{Binding}" HeightRequest="30" IsChecked="False" CheckedChanged="chkPref_Checked"/>
+                                <CheckBox Grid.Column="0"    x:Name="{Binding}" ClassId="{Binding}" HeightRequest="30" IsChecked="False" CheckedChanged="chkPref_Checked"/>
                                 <Label    Grid.Column="1"    Text="{Binding}"    HeightRequest="30" FontSize="Small" Margin="2,6,0,0" />
                                 <ImageButton Grid.Column="2" ClassId="{Binding}" HeightRequest="30" Source="delete_pref.png" Clicked="btnDeletePref_Clicked"/>
 
