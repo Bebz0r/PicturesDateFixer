@@ -12,7 +12,6 @@ using System.Text.RegularExpressions;
 using CommunityToolkit.Maui.Core.Primitives;
 using CommunityToolkit.Maui.Alerts;
 using Microsoft.Maui.Controls.Compatibility;
-
 namespace PicturesDateFixer;
 
 public partial class MainPage : ContentPage
@@ -38,16 +37,13 @@ public partial class MainPage : ContentPage
     //      <mct:StatusBarBehavior StatusBarColor = "pink" />
     // </ContentPage.Behaviors>
 
-
     // Fill which will be found
     List<DriveFile> foundFiles = new List<DriveFile>();
     // Exceptions
     List<ExceptionCustom> exceptList = new List<ExceptionCustom>();
 
-    // Target Folders Names in Pregs
-    List<String> prefsTargetFolderList = new List<String>();
     // Target Folders Names
-    List<String> targetFolderList = new List<String>();
+    List<PrefFolder> targetFolderList = new List<PrefFolder>();
 
     public MainPage()
     {
@@ -190,15 +186,7 @@ public partial class MainPage : ContentPage
     // Read the Prefs and update the collection view
     private void RefreshCvPrefs()
     {
-        // Add the target in the SD Card (second part is default)
-        string prefFolderList = Preferences.Get("prefTargetFolderList", "").ToString();
-
-        prefsTargetFolderList = new List<String>();
-        foreach (string aFolder in prefFolderList.Split(";"))
-            if (aFolder.Trim().Length > 0)
-                prefsTargetFolderList.Add(aFolder);
-
-        cvPreferences.ItemsSource = prefsTargetFolderList.OrderBy(x => x).ToList();
+        cvPreferences.ItemsSource = targetFolderList.OrderBy(x => x.Name).ToList();
     }
 
     // Add Preference Clicked
@@ -211,17 +199,19 @@ public partial class MainPage : ContentPage
         string toAdd = txtAddPref.Text.Trim();
         if (toAdd.Length > 0)
         {
-            if (prefsTargetFolderList.Contains(toAdd))
+            // If it exists
+            if (targetFolderList.FirstOrDefault(x => x.Name == toAdd) != null)
             {
                 await DisplayAlert("Error", $"'{toAdd}' already exists.", "OK");
             }
             else
             {
-                prefsTargetFolderList.Add(toAdd);
+                targetFolderList.Add(new PrefFolder { Name = toAdd, IsChecked = false });
                 txtAddPref.Text = "";
 
                 // Save the Prefs
-                Preferences.Set("prefTargetFolderList", String.Join(";", prefsTargetFolderList.ToArray()));
+                string strPrefs= string.Join(";", targetFolderList.Select(x => x.Name).ToList());
+                Preferences.Set("prefTargetFolderList", strPrefs);
 
                 // Refresh the Prefs
                 RefreshCvPrefs();
@@ -246,12 +236,14 @@ public partial class MainPage : ContentPage
                                             "DCIM/Test EXIF;" +
                                             "WhatsApp/Media/Whatsapp Images" +
                                             "");
-        
-        // Refresh the prefs
-        RefreshCvPrefs();
 
-        // Clear the items in targetFolder
-        targetFolderList = new List<String>();
+        // Add the items in targetFolder
+        targetFolderList = new List<PrefFolder>();
+        foreach (string aPref in Preferences.Get("prefTargetFolderList", "").Split(";"))
+            targetFolderList.Add(new PrefFolder { Name = aPref, IsChecked = false });
+
+        // Refresh the prefs
+        RefreshCvPrefs();    
 
         await DisplayAlert("Default Prefs", $"Preferences have been set to Default.", "OK");
     }
@@ -261,61 +253,18 @@ public partial class MainPage : ContentPage
     {
         // Set the pref to nothing
         Preferences.Set("prefTargetFolderList","");
-        
-        // Refresh the prefs
-        RefreshCvPrefs();
 
         // Clear the items in targetFolder
-        targetFolderList = new List<String>();
+        targetFolderList = new List<PrefFolder>();
+
+        // Refresh the prefs
+        RefreshCvPrefs();
 
         await DisplayAlert("Prefs Reset", $"Preferences have been reset.", "OK");
     }
 
-    // Tick everything TODO
-    private void btnSelectAllPrefs_Clicked(object sender, EventArgs e)
-    {
-        // Check if checking it with code triggers the stuff
-        foreach (string pref in prefsTargetFolderList)
-        { 
-            CheckBox checkbox = (CheckBox)FindByName(pref);
-            if (checkbox != null)
-                checkbox.IsChecked = true;
-        }
-    }
 
-    // Untick everything TODO
-    private void btnSelectNoPrefs_Clicked(object sender, EventArgs e)
-    {
-        foreach (string pref in prefsTargetFolderList)
-        {
-            CheckBox checkbox = (CheckBox)FindByName(pref);
-            if (checkbox != null)
-                checkbox.IsChecked = false;
-        }
-    }
-
-    // A Pref checkbox is checked : recalculate the targetFolderList List
-    private void chkPref_Checked(object sender, CheckedChangedEventArgs e)
-    {
-        // Get the checkbox clicked
-        CheckBox theCheckbox = (CheckBox)sender;
-        string theFolder = theCheckbox.ClassId;
-
-        // Checked : Add it if not exist
-        if (theCheckbox.IsChecked)
-        {
-            if (!targetFolderList.Contains(theFolder))
-                targetFolderList.Add(theFolder);
-        }
-        // UnChecked : Remove it if exist
-        else
-        {
-            if (targetFolderList.Contains(theFolder))
-                targetFolderList.Remove(theFolder);
-        }
-    }
-
-    // A Pref delete button is clicked : : remove it and recalculate the targetFolderList List
+    // A PrefFolder delete button is clicked : : remove it and recalculate the targetFolderList List
     private void btnDeletePref_Clicked(object sender, EventArgs e)
     {
         // Get the imagebutton clicked
@@ -323,18 +272,53 @@ public partial class MainPage : ContentPage
         string theFolder = theImageButton.ClassId;
 
         // Remove it from the preferences
-        if (prefsTargetFolderList.Contains(theFolder))
-            prefsTargetFolderList.Remove(theFolder);
+        targetFolderList.Remove((PrefFolder)theImageButton.BindingContext);
 
         // Save the Prefs
-        Preferences.Set("prefTargetFolderList", String.Join(";", prefsTargetFolderList.ToArray()));
+        string strPrefs = string.Join(";", targetFolderList.Select(x => x.Name).ToList());
+        Preferences.Set("prefTargetFolderList", strPrefs);
 
         // Refresh the Prefs
         RefreshCvPrefs();
+    }
 
-        // Remove it as well if present in the folder list
-        if (targetFolderList.Contains(theFolder))
-            targetFolderList.Remove(theFolder);
+    // Tick everything
+    private void btnSelectAllPrefs_Clicked(object sender, EventArgs e)
+    {
+        foreach (PrefFolder aPref in targetFolderList)
+            aPref.IsChecked = true;
+
+        // Refresh the prefs
+        RefreshCvPrefs();
+    }
+
+    // Untick everything
+    private void btnSelectNoPrefs_Clicked(object sender, EventArgs e)
+    {
+        foreach (PrefFolder aPref in targetFolderList)
+            aPref.IsChecked = false;
+
+        // Refresh the prefs
+        RefreshCvPrefs();
+    }
+    // Invert the selection
+    private void btnSelectInversePrefs_Clicked(object sender, EventArgs e)
+    {
+        foreach (PrefFolder aPref in targetFolderList)
+            aPref.IsChecked = !aPref.IsChecked;
+
+        // Refresh the prefs
+        RefreshCvPrefs();
+    }
+
+    private void chkPref_Changed(object sender, CheckedChangedEventArgs e)
+    {
+        CheckBox theCheckbox = (CheckBox)sender;
+        PrefFolder theFolder = (PrefFolder)theCheckbox.BindingContext;
+
+        PrefFolder aPref = targetFolderList.FirstOrDefault(x => x.Name == theFolder.Name);
+        if (aPref != null)
+            aPref.IsChecked = theFolder.IsChecked;
     }
     #endregion
 
@@ -468,112 +452,115 @@ public partial class MainPage : ContentPage
             await DisplayAlert("Alert", "No target folders set. Check in the Settings Panel to add some.", "OK");
 
         // For each Target Folder specified in the main
-        foreach (string aTargetFolder in targetFolderList)
+        foreach (PrefFolder aTargetFolder in targetFolderList)
         {
-            // Target folder
-            string targetFolder = $"{lblRootFolder.Text}/{aTargetFolder}";
-            try
+            if (aTargetFolder.IsChecked)
             {
-                // Get the files
-                lblCurrentFolder.Text = aTargetFolder;
-                //string[] theFiles = Directory.GetFiles("/storage/3439-3532/DCIM/Camera", "*");
-                string[] theFiles = Directory.GetFiles(targetFolder, "*");
-
-                int cnt = 0;
-                // For each directory, match the searched one if found
-                foreach (var aFile in theFiles)
+                // Target folder
+                string targetFolder = $"{lblRootFolder.Text}/{aTargetFolder.Name}";
+                try
                 {
+                    // Get the files
+                    lblCurrentFolder.Text = aTargetFolder.Name;
+                    //string[] theFiles = Directory.GetFiles("/storage/3439-3532/DCIM/Camera", "*");
+                    string[] theFiles = Directory.GetFiles(targetFolder, "*");
 
-                    // Progress
-                    cnt++;
-                    lblProgress.Text = $"{cnt} / {theFiles.Count()} - {Math.Round((double)cnt / theFiles.Count()*100)}%";
-                    await prgBar.ProgressTo((double)cnt / theFiles.Count(), 10, Easing.Linear);
-
-                    // Only take the files in scope
-                    if (validExtensions.Contains(new FileInfo(aFile).Extension.ToLower()))
+                    int cnt = 0;
+                    // For each directory, match the searched one if found
+                    foreach (var aFile in theFiles)
                     {
-                        DriveFile aDriveFile = new DriveFile();
-                        // BASIC DATA ====================================================================
-                        aDriveFile.FullPath = aFile;
-                        aDriveFile.Name = System.IO.Path.GetFileName(aFile);
-                        aDriveFile.Created = File.GetCreationTime(aFile);
-                        aDriveFile.Modified = File.GetLastWriteTime(aFile);
-                        aDriveFile.Extension = new FileInfo(aFile).Extension;
 
-                        // EXIF DATA =====================================================================
-                        // Use of Nuget : EXIFLibNet : GET
-                        try
+                        // Progress
+                        cnt++;
+                        lblProgress.Text = $"{cnt} / {theFiles.Count()} - {Math.Round((double)cnt / theFiles.Count() * 100)}%";
+                        await prgBar.ProgressTo((double)cnt / theFiles.Count(), 10, Easing.Linear);
+
+                        // Only take the files in scope
+                        if (validExtensions.Contains(new FileInfo(aFile).Extension.ToLower()))
                         {
-                            var exifFile = ImageFile.FromFile(aFile);
-                            if (aDriveFile.Extension.ToLower() == ".png")
+                            DriveFile aDriveFile = new DriveFile();
+                            // BASIC DATA ====================================================================
+                            aDriveFile.FullPath = aFile;
+                            aDriveFile.Name = System.IO.Path.GetFileName(aFile);
+                            aDriveFile.Created = File.GetCreationTime(aFile);
+                            aDriveFile.Modified = File.GetLastWriteTime(aFile);
+                            aDriveFile.Extension = new FileInfo(aFile).Extension;
+
+                            // EXIF DATA =====================================================================
+                            // Use of Nuget : EXIFLibNet : GET
+                            try
                             {
-                                ExifProperty tagPng = exifFile.Properties.Get(ExifTag.PNGCreationTime);
-                                if (tagPng != null)
+                                var exifFile = ImageFile.FromFile(aFile);
+                                if (aDriveFile.Extension.ToLower() == ".png")
                                 {
-                                    // :
-                                    aDriveFile.DateTimeOriginal = DateTime.ParseExact(tagPng.Value.ToString(),
-                                                                          "yyyy:MM:dd HH:mm:ss",
-                                                                          System.Globalization.CultureInfo.InvariantCulture);
+                                    ExifProperty tagPng = exifFile.Properties.Get(ExifTag.PNGCreationTime);
+                                    if (tagPng != null)
+                                    {
+                                        // :
+                                        aDriveFile.DateTimeOriginal = DateTime.ParseExact(tagPng.Value.ToString(),
+                                                                              "yyyy:MM:dd HH:mm:ss",
+                                                                              System.Globalization.CultureInfo.InvariantCulture);
+                                    }
+                                }
+                                else if (aDriveFile.Extension.ToLower() == ".jpg" || aDriveFile.Extension.ToLower() == ".jpeg")
+                                {
+                                    ExifProperty tagJpg = exifFile.Properties.Get(ExifTag.DateTimeOriginal);
+                                    if (tagJpg != null)
+                                    {
+                                        aDriveFile.DateTimeOriginal = (tagJpg as ExifDateTime).Value;
+                                    }
+                                }
+                                else if (aDriveFile.Extension.ToLower() == ".gif")
+                                {
+                                    aDriveFile.DateTimeOriginal = null;
+                                }
+                                else
+                                {
+                                    aDriveFile.DateTimeOriginal = null;
                                 }
                             }
-                            else if (aDriveFile.Extension.ToLower() == ".jpg" || aDriveFile.Extension.ToLower() == ".jpeg")
+                            catch (Exception ex)
                             {
-                                ExifProperty tagJpg = exifFile.Properties.Get(ExifTag.DateTimeOriginal);
-                                if (tagJpg != null)
-                                {
-                                    aDriveFile.DateTimeOriginal = (tagJpg as ExifDateTime).Value;
-                                }
+                                exceptList.Add(new ExceptionCustom { Drive = aDriveFile.FullPath, ExceptionMessage = ex.Message });
                             }
-                            else if(aDriveFile.Extension.ToLower() == ".gif")
-                            {
-                                aDriveFile.DateTimeOriginal = null;
-                            }
-                            else
-                            {
-                                aDriveFile.DateTimeOriginal = null;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            exceptList.Add(new ExceptionCustom { Drive = aDriveFile.FullPath, ExceptionMessage = ex.Message });
-                        }
 
-                        // FILTERS =====================================================================
-                        // If the date time is null : to be set : add it to the list
-                        if (aDriveFile.DateTimeOriginal == null)
-                        {
-                            foundFiles.Add(aDriveFile);
-                        }
-                        else
-                        {
-                            // Start Checked / End Checked : filter between
-                            if (chkUseDatePickerStart.IsChecked & chkUseDatePickerEnd.IsChecked)
+                            // FILTERS =====================================================================
+                            // If the date time is null : to be set : add it to the list
+                            if (aDriveFile.DateTimeOriginal == null)
                             {
-                                if (aDriveFile.DateTimeOriginal.Value.Date >= dpPickerStart.Date.Date & aDriveFile.DateTimeOriginal.Value.Date <= dpPickerEnd.Date.Date)
-                                    foundFiles.Add(aDriveFile);
-                            }
-                            // Start Checked / End Unchecked : only filter on the Start Date
-                            else if (chkUseDatePickerStart.IsChecked & !chkUseDatePickerEnd.IsChecked)
-                            {
-                                if (aDriveFile.DateTimeOriginal.Value.Date >= dpPickerStart.Date.Date)
-                                    foundFiles.Add(aDriveFile);
-                            }
-                            // Start Unchecked / End Checked : only filter on the End Date
-                            else if (!chkUseDatePickerStart.IsChecked & chkUseDatePickerEnd.IsChecked)
-                            {
-                                if (aDriveFile.DateTimeOriginal.Value.Date <= dpPickerEnd.Date.Date)
-                                    foundFiles.Add(aDriveFile);
-                            }
-                            // Last case : Start Unchecked / End Unchecked : add the file
-                            else
                                 foundFiles.Add(aDriveFile);
+                            }
+                            else
+                            {
+                                // Start Checked / End Checked : filter between
+                                if (chkUseDatePickerStart.IsChecked & chkUseDatePickerEnd.IsChecked)
+                                {
+                                    if (aDriveFile.DateTimeOriginal.Value.Date >= dpPickerStart.Date.Date & aDriveFile.DateTimeOriginal.Value.Date <= dpPickerEnd.Date.Date)
+                                        foundFiles.Add(aDriveFile);
+                                }
+                                // Start Checked / End Unchecked : only filter on the Start Date
+                                else if (chkUseDatePickerStart.IsChecked & !chkUseDatePickerEnd.IsChecked)
+                                {
+                                    if (aDriveFile.DateTimeOriginal.Value.Date >= dpPickerStart.Date.Date)
+                                        foundFiles.Add(aDriveFile);
+                                }
+                                // Start Unchecked / End Checked : only filter on the End Date
+                                else if (!chkUseDatePickerStart.IsChecked & chkUseDatePickerEnd.IsChecked)
+                                {
+                                    if (aDriveFile.DateTimeOriginal.Value.Date <= dpPickerEnd.Date.Date)
+                                        foundFiles.Add(aDriveFile);
+                                }
+                                // Last case : Start Unchecked / End Unchecked : add the file
+                                else
+                                    foundFiles.Add(aDriveFile);
+                            }
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                exceptList.Add(new ExceptionCustom { Drive = aTargetFolder, ExceptionMessage = ex.Message });
+                catch (Exception ex)
+                {
+                    exceptList.Add(new ExceptionCustom { Drive = aTargetFolder.Name, ExceptionMessage = ex.Message });
+                }
             }
         }
 

@@ -241,6 +241,12 @@
                         Text="Select None"
                         HorizontalOptions="Center"
                         Clicked="btnSelectNoPrefs_Clicked"/>
+
+                    <Button
+                        x:Name="btnSelectInversePrefs"
+                        Text="Select Invert"
+                        HorizontalOptions="Center"
+                        Clicked="btnSelectInversePrefs_Clicked"/>
                 </StackLayout>
 
                 <!-- Pref list -->
@@ -258,9 +264,9 @@
                                     <ColumnDefinition Width="20"/>
                                 </Grid.ColumnDefinitions>
 
-                                <CheckBox Grid.Column="0"    x:Name="{Binding}" ClassId="{Binding}" HeightRequest="30" IsChecked="False" CheckedChanged="chkPref_Checked"/>
-                                <Label    Grid.Column="1"    Text="{Binding}"    HeightRequest="30" FontSize="Small" Margin="2,6,0,0" />
-                                <ImageButton Grid.Column="2" ClassId="{Binding}" HeightRequest="30" Source="delete_pref.png" Clicked="btnDeletePref_Clicked"/>
+                                <CheckBox Grid.Column="0"    ClassId="{Binding}" HeightRequest="30" IsChecked="{Binding IsChecked}" CheckedChanged="chkPref_Changed"/>
+                                <Label    Grid.Column="1"    Text="{Binding Name}"    HeightRequest="30" FontSize="Small" Margin="2,6,0,0" />
+                                <ImageButton Grid.Column="2" ClassId="{Binding Name}" HeightRequest="30" Source="delete_pref.png" Clicked="btnDeletePref_Clicked"/>
 
                             </Grid>
                         </DataTemplate>
@@ -276,7 +282,7 @@
                             <Frame Padding="2,5,2,10" Margin="0,0,0,2" CornerRadius="3">
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition/>
+                                        <RowDefinition Height="30"/>
                                         <RowDefinition/>
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
