@@ -19,6 +19,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="50"/>
                     <RowDefinition Height="20"/>
+                    <RowDefinition Height="1"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="90"/>
@@ -33,6 +34,10 @@
                 <Label x:Name="lblMenuMain"     Grid.Row="1" Grid.Column="0" Text="Main"     IsVisible="true"  FontSize="Micro" HorizontalTextAlignment="Center"/>
                 <Label x:Name="lblMenuSettings" Grid.Row="1" Grid.Column="1" Text="Settings" IsVisible="true"  FontSize="Micro" HorizontalTextAlignment="Center"/>
                 <Label x:Name="lblMenuResults"  Grid.Row="1" Grid.Column="2" Text="Results"  IsVisible="false" FontSize="Micro" HorizontalTextAlignment="Center"/>
+
+                <BoxView x:Name="bxMenuMain" Grid.Row="3" Grid.Column="0" HeightRequest="1" Margin="20,0,20,0" Color="#9a0089"/>
+                <BoxView x:Name="bxMenuSettings" Grid.Row="3" Grid.Column="1" HeightRequest="1" Margin="20,0,20,0" Color="Transparent"/>
+                <BoxView x:Name="bxMenuResults" Grid.Row="3" Grid.Column="2" HeightRequest="1" Margin="20,0,20,0" Color="Transparent"/>
             </Grid>
             
             <!-- Main -->
@@ -147,7 +152,7 @@
                     x:Name="btnDewitt"
                     Source="dewitt2.png"
                     IsVisible="false"
-                    HeightRequest="200"
+                    HeightRequest="175"
                     Clicked="btnDewitt_Clicked"/>
 
                 <!-- Dewitt Options -->

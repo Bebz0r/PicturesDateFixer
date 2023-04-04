@@ -86,6 +86,7 @@ public partial class MainPage : ContentPage
     }
 
     // MISC AND HELPERS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // vv REGEX FOR FILE RECOGNITION GO HERE vv
     #region MISC AND HELPERS
     // Extract a Datetime based on the file name
     private static DateTime? GetDateTimeFromFileName(string fileWithoutExtension)
@@ -169,8 +170,11 @@ public partial class MainPage : ContentPage
     private void btnMenuMain_Clicked(object sender, EventArgs e)
     {
         btnMenuMain.Source = "main.png";
+        bxMenuMain.Color = Color.FromArgb("#9a0089");
         btnMenuSettings.Source = "settings_disabled.png";
+        bxMenuSettings.Color = Color.FromArgb("#00FFFFFF");
         btnMenuResults.Source = "results_disabled.png";
+        bxMenuResults.Color = Color.FromArgb("#00FFFFFF");
 
         btnMenuResults.IsVisible = (foundFiles.Count() != 0);
         lblMenuResults.IsVisible = (foundFiles.Count() != 0);
@@ -183,8 +187,11 @@ public partial class MainPage : ContentPage
     private void btnMenuSettings_Clicked(object sender, EventArgs e)
     {
         btnMenuMain.Source = "main_disabled.png";
+        bxMenuMain.Color = Color.FromArgb("#00FFFFFF");
         btnMenuSettings.Source = "settings.png";
+        bxMenuSettings.Color = Color.FromArgb("#9a0089");
         btnMenuResults.Source = "results_disabled.png";
+        bxMenuResults.Color = Color.FromArgb("#00FFFFFF");
 
         btnMenuResults.IsVisible = (foundFiles.Count() != 0);
         lblMenuResults.IsVisible = (foundFiles.Count() != 0);
@@ -197,8 +204,11 @@ public partial class MainPage : ContentPage
     private void btnMenuResults_Clicked(object sender, EventArgs e)
     {
         btnMenuMain.Source = "main_disabled.png";
+        bxMenuMain.Color = Color.FromArgb("#00FFFFFF");
         btnMenuSettings.Source = "settings_disabled.png";
+        bxMenuSettings.Color = Color.FromArgb("#00FFFFFF");
         btnMenuResults.Source = "results.png";
+        bxMenuResults.Color = Color.FromArgb("#9a0089");
 
         btnMenuResults.IsVisible = (foundFiles.Count() != 0);
         lblMenuResults.IsVisible = (foundFiles.Count() != 0);
