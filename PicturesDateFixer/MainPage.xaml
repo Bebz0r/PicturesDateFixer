@@ -128,68 +128,86 @@
 
                 <!-- PART III : Progress Bars -->
                 <!-- Progress Bar -->
-                <Grid Margin="30,0,0,0">
+                <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75"/>
                         <ColumnDefinition/>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="75"/>
                     </Grid.ColumnDefinitions>
+
+                    <Label
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        x:Name="lblProgressFolderValue"
+                        HorizontalOptions="Center"
+                        FontSize="Micro"
+                        IsVisible="false"/>
                     
                     <ProgressBar 
                         Grid.Row="0"
-                        Grid.Column="0"
+                        Grid.Column="1"
                         x:Name="prgBarFolder"
                         IsVisible="false"
                         Progress="0.0" />
 
                     <Label
                         Grid.Row="0"
-                        Grid.Column="1"
-                        x:Name="lblProgressFolder"
+                        Grid.Column="2"
+                        x:Name="lblProgressFolderPercent"
                         HorizontalOptions="Center"
                         FontSize="Micro"
                         IsVisible="false"/>
                     
                     <Label
                         Grid.Row="1"
-                        Grid.ColumnSpan="2"
+                        Grid.ColumnSpan="3"
                         x:Name="lblCurrentFolder"
                         HorizontalOptions="Center"
                         FontSize="Micro"
                         IsVisible="false"/>
                 </Grid>
 
-                <Grid Margin="30,0,0,0">
+                <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75"/>
                         <ColumnDefinition/>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="75"/>
                     </Grid.ColumnDefinitions>
+
+                    <Label
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        x:Name="lblProgressFileValue"
+                        HorizontalOptions="Center"
+                        FontSize="Micro"
+                        IsVisible="false"/>
                     
                     <ProgressBar 
                         Grid.Row="0"
-                        Grid.Column="0"
+                        Grid.Column="1"
                         x:Name="prgBar"
                         IsVisible="false"
                         Progress="0.0" />
 
                     <Label
                         Grid.Row="0"
-                        Grid.Column="1"
-                        x:Name="lblProgress"
+                        Grid.Column="2"
+                        x:Name="lblProgressFilePercent"
                         HorizontalOptions="Center"
                         FontSize="Micro"
                         IsVisible="false"/>
                 
                     <Label
                         Grid.Row="1"
-                        Grid.ColumnSpan="2"
+                        Grid.ColumnSpan="3"
                         x:Name="lblCurrentFile"
                         HorizontalOptions="Center"
                         FontSize="Micro"
@@ -239,15 +257,47 @@
                 
                 <!-- PART V -->
                 <!-- Progress Bar -->
-                <ProgressBar 
-                    x:Name="prgBarEXIF"
-                    IsVisible="false"
-                    Progress="0.0" />
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="75"/>
+                    </Grid.ColumnDefinitions>
 
-                <Label
-                    x:Name="lblProgressEXIF"
-                    HorizontalOptions="Center"
-                    IsVisible="false"/>
+                    <Label
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        x:Name="lblProgressEXIFValue"
+                        HorizontalOptions="Center"
+                        FontSize="Micro"
+                        IsVisible="false"/>
+
+                    <ProgressBar 
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        x:Name="prgBarEXIF"
+                        IsVisible="false"
+                        Progress="0.0" />
+
+                    <Label
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        x:Name="lblProgressEXIFPercent"
+                        HorizontalOptions="Center"
+                        FontSize="Micro"
+                        IsVisible="false"/>
+
+                    <Label
+                        Grid.Row="1"
+                        Grid.ColumnSpan="3"
+                        x:Name="lblCurrentEXIF"
+                        HorizontalOptions="Center"
+                        IsVisible="false"/>
+                </Grid>
             </StackLayout>
 
             <!-- Settings -->

@@ -237,6 +237,7 @@ public partial class MainPage : ContentPage
     }
     #endregion
 
+    #region UI PARTS - SHOW / HIDE
     // UI PARTS - SHOW / HIDE
     // Part II : DateTime Start and End Selector, Search Folder Button
     private void ShowPartII(bool show)
@@ -256,28 +257,32 @@ public partial class MainPage : ContentPage
     // Part III : Search File Progress Bars
     private void ShowPartIII(bool show)
     {
+        lblProgressFolderValue.IsVisible = show;
         prgBarFolder.IsVisible = show;
+        lblProgressFolderPercent.IsVisible = show;
         lblCurrentFolder.IsVisible = show;
-        lblProgressFolder.IsVisible = show;
 
+        lblProgressFileValue.IsVisible = show;
         prgBar.IsVisible = show;
+        lblProgressFilePercent.IsVisible = show;
         lblCurrentFile.IsVisible = show;
-        lblProgress.IsVisible = show;
 
         // If hidden, clear the values
         if (!show)
         {
+            lblProgressFolderValue.Text = "";
             prgBarFolder.Progress = 0;
+            lblProgressFolderPercent.Text = "";
             lblCurrentFolder.Text = "";
-            lblProgressFolder.Text = "";
 
+            lblProgressFileValue.Text = "";
             prgBar.Progress = 0;
+            lblProgressFilePercent.Text = "";
             lblCurrentFile.Text = "";
-            lblProgress.Text = "";
         }
     }
 
-    // Logs, Results, DEWITT button and Options 
+    // PART IV : Logs, Results, DEWITT button and Options 
     private void ShowPartIV(bool show)
     {
         btnLog.IsVisible = show;
@@ -287,9 +292,6 @@ public partial class MainPage : ContentPage
         slOverwrite.IsVisible = show;
         chkForReal.IsVisible = show;
 
-        prgBarEXIF.IsVisible = show;
-        lblProgressEXIF.IsVisible = show;
-
         btnMenuResults.IsVisible = show;
         lblMenuResults.IsVisible = show;
 
@@ -297,12 +299,24 @@ public partial class MainPage : ContentPage
             cvResults.ItemsSource = null;
     }
 
-    // DEWITT progress bar
+    // PART V : DEWITT progress bar
     private void ShowPartV(bool show)
     {
+        lblProgressEXIFValue.IsVisible = show;
         prgBarEXIF.IsVisible = show;
-        lblProgressEXIF.IsVisible = show;
+        lblProgressEXIFPercent.IsVisible = show;
+        lblCurrentEXIF.IsVisible = show;
+
+        // If hidden, clear the values
+        if (!show)
+        {
+            lblProgressEXIFValue.Text = "";
+            prgBarEXIF.Progress = 0;
+            lblProgressEXIFPercent.Text = "";
+            lblCurrentEXIF.Text = "";
+        }
     }
+    #endregion
 
     // PREFS HANDLING ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #region PREFS HANDLING
@@ -529,18 +543,21 @@ public partial class MainPage : ContentPage
         // Lists of Exception
         exceptList = new List<LogLine>();
 
+        List<PrefFolder>targetFolderListChecked = targetFolderList.Where(x => x.IsChecked).ToList();
+        int cntFolderChecked = targetFolderListChecked.Count();
+
         ShowPartII(true);
-        ShowPartIII(true);
+        ShowPartIII(cntFolderChecked > 0);
         ShowPartIV(false);
         ShowPartV(false);
 
-        if (targetFolderList.Count == 0)
+        if (targetFolderListChecked.Count == 0)
             await DisplayAlert("Alert", "No target folders set. Check in the Settings Panel to add some.", "OK");
 
         int cntFolder = 0;
-        int cntFolderChecked = targetFolderList.Where(x => x.IsChecked).Count();
+
         // For each Target Folder specified in the main
-        foreach (PrefFolder aTargetFolder in targetFolderList)
+        foreach (PrefFolder aTargetFolder in targetFolderListChecked)
         {
             if (aTargetFolder.IsChecked)
             {
@@ -550,7 +567,8 @@ public partial class MainPage : ContentPage
                 // Progress Folder
                 cntFolder++;
                 lblCurrentFolder.Text = aTargetFolder.Name;
-                lblProgressFolder.Text = $"{cntFolder} / {cntFolderChecked} - {Math.Round((double)cntFolder / cntFolderChecked * 100)}%";
+                lblProgressFolderValue.Text = $"{cntFolder} / {cntFolderChecked}";
+                lblProgressFolderPercent.Text = $"{Math.Round((double)cntFolder / cntFolderChecked * 100)}%";
                 await prgBarFolder.ProgressTo((double)cntFolder / cntFolderChecked, 10, Easing.Linear);
 
                 try
@@ -567,7 +585,8 @@ public partial class MainPage : ContentPage
                         // Progress File
                         cnt++;
                         lblCurrentFile.Text = System.IO.Path.GetFileName(aFile);
-                        lblProgress.Text = $"{cnt} / {theFiles.Count()} - {Math.Round((double)cnt / theFiles.Count() * 100)}%";
+                        lblProgressFileValue.Text = $"{cnt} / {theFiles.Count()}";
+                        lblProgressFilePercent.Text = $"{Math.Round((double)cnt / theFiles.Count() * 100)}%";
                         await prgBar.ProgressTo((double)cnt / theFiles.Count(), 10, Easing.Linear);
 
                         // Only take the files in scope
@@ -723,8 +742,8 @@ public partial class MainPage : ContentPage
     #region ADD EXIF DATA
     private async void btnDewitt_Clicked(object sender, EventArgs e)
     {
-        var result = await DisplayAlert("DEWITT ?", "DEWITT ?", "Nah.", "DEWITT !!");
-        if (!result)
+        var result = await DisplayAlert("DEWITT ?", "DEWITT ?", "DEWITT !!", "Nah.");
+        if (result)
         {
             ShowPartV(true);
 
@@ -737,9 +756,11 @@ public partial class MainPage : ContentPage
             {
                 string AdditionnalLog = "";
 
-                // Progress
+                // Progress EXIF
                 cntTotal++;
-                lblProgressEXIF.Text = $"{aDriveFile.Folder} - {cntTotal} / {foundFiles.Count()} - {Math.Round((double)cntTotal / foundFiles.Count() * 100)}%";
+                lblProgressEXIFValue.Text = $"{cntTotal} / {foundFiles.Count()}";
+                lblProgressEXIFPercent.Text = $"{Math.Round((double)cntTotal / foundFiles.Count() * 100)}%";
+                lblCurrentEXIF.Text = $"{aDriveFile.Folder}";
                 await prgBarEXIF.ProgressTo((double)cntTotal / foundFiles.Count(), 10, Easing.Linear);
 
                 try
