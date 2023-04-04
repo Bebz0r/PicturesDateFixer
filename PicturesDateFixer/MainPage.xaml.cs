@@ -61,8 +61,6 @@ public partial class MainPage : ContentPage
     //         base.OnCreate(savedInstanceState);
     //     }
     // }
-
-
     #endregion
 
     // Fill which will be found
@@ -71,7 +69,7 @@ public partial class MainPage : ContentPage
     List<LogLine> exceptList = new List<LogLine>();
 
     // Target Folders Names
-    List<PrefFolder> targetFolderList = new List<PrefFolder>();
+    List<PrefFolder> targetFolderList;
 
     public MainPage()
     {
@@ -81,6 +79,13 @@ public partial class MainPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+
+        // Load the previously stored prefs
+        // Add the items in targetFolder
+        targetFolderList = new List<PrefFolder>();
+        foreach (string aPref in Preferences.Get("prefTargetFolderList", "").Split(";"))
+            targetFolderList.Add(new PrefFolder { Name = aPref, IsChecked = false });
+
         // Update the collection view preferences
         RefreshCvPrefs();
     }
@@ -99,6 +104,8 @@ public partial class MainPage : ContentPage
         string reScreenshot = @"Screenshot_(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})";
         // NBP
         string reNBP = @"(\d{4})_(\d{2})_(\d{2})_(\d{2})(\d{2})(\d{2})_JCS";
+        // Video Capture : VideoCapture_20220502-192015.jpg
+        string reVideoCapture = @"VideoCapture_(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})";
         // Other : 20190217194435_1.jpg
         string reOther = @"(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})_\d";
 
@@ -106,6 +113,7 @@ public partial class MainPage : ContentPage
         Match mWhatsApp = new Regex(reWhatsApp).Match(fileWithoutExtension);
         Match mScreenshot = new Regex(reScreenshot).Match(fileWithoutExtension);
         Match mNBP = new Regex(reNBP).Match(fileWithoutExtension);
+        Match mVideoCapture = new Regex(reVideoCapture).Match(fileWithoutExtension);
         Match mOther = new Regex(reOther).Match(fileWithoutExtension);
 
         DateTime? newDate;
@@ -144,6 +152,16 @@ public partial class MainPage : ContentPage
             int h = int.Parse(mNBP.Groups[4].Value);
             int m = int.Parse(mNBP.Groups[5].Value);
             int s = int.Parse(mNBP.Groups[6].Value);
+            newDate = new DateTime(y, M, d, h, m, s);
+        }
+        else if (mVideoCapture.Success)
+        {
+            int y = int.Parse(mVideoCapture.Groups[1].Value);
+            int M = int.Parse(mVideoCapture.Groups[2].Value);
+            int d = int.Parse(mVideoCapture.Groups[3].Value);
+            int h = int.Parse(mVideoCapture.Groups[4].Value);
+            int m = int.Parse(mVideoCapture.Groups[5].Value);
+            int s = int.Parse(mVideoCapture.Groups[6].Value);
             newDate = new DateTime(y, M, d, h, m, s);
         }
         else if (mOther.Success)
@@ -221,6 +239,12 @@ public partial class MainPage : ContentPage
 
     // PREFS HANDLING ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #region PREFS HANDLING
+    // New Pref textbox changed : enable or not the btnAdd
+    private void txtAddPref_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        btnAddPref.IsEnabled = (e.NewTextValue.Trim().Length > 0);
+    }
+
     // Read the Prefs and update the collection view
     private void RefreshCvPrefs()
     {

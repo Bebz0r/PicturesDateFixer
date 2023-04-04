@@ -204,6 +204,7 @@
                     Placeholder="DCIM/Camera"
                     Text=""
                     Completed="btnAddPref_Clicked"
+                    TextChanged="txtAddPref_TextChanged"
                     HorizontalTextAlignment="Center"/>
                 
                 <StackLayout 
@@ -215,7 +216,8 @@
                         x:Name="btnAddPref"
                         Text="Add Pref"
                         Clicked="btnAddPref_Clicked"
-                        HorizontalOptions="Center" />
+                        HorizontalOptions="Center"
+                        IsEnabled="false"/>
 
                     <Button
                         x:Name="btnDefaultPref"
@@ -288,6 +290,7 @@
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="30"/>
+                                        <RowDefinition Height="30"/>
                                         <RowDefinition/>
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
@@ -296,15 +299,16 @@
                                         <ColumnDefinition/>
                                         <ColumnDefinition/>
                                     </Grid.ColumnDefinitions>
-                                    <Label Grid.Row="0" Grid.ColumnSpan="3" HorizontalOptions="Center"  Text="{Binding Name}" FontSize="Small" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="0" Grid.ColumnSpan="3" HorizontalOptions="Center"  Text="{Binding Name}"   FontSize="Small" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="1" Grid.ColumnSpan="3" HorizontalOptions="Center"  Text="{Binding Folder}" FontSize="Micro" Padding="0,0,0,0"/>
                                     
-                                    <Label Grid.Row="1" Grid.Column="0" Text="Created :" FontSize="Micro" Padding="0,0,0,0"/>
-                                    <Label Grid.Row="1" Grid.Column="1" Text="Modified :" FontSize="Micro" Padding="0,0,0,0"/>
-                                    <Label Grid.Row="1" Grid.Column="2" Text="Date Time Original :" FontSize="Micro" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="2" Grid.Column="0" Text="Created :" FontSize="Micro" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="2" Grid.Column="1" Text="Modified :" FontSize="Micro" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="2" Grid.Column="2" Text="Date Time Original :" FontSize="Micro" Padding="0,0,0,0"/>
                                     
-                                    <Label Grid.Row="2" Grid.Column="0" Text="{Binding CreatedStr2}" FontSize="Micro" Padding="0,0,0,0"/>
-                                    <Label Grid.Row="2" Grid.Column="1" Text="{Binding ModifiedStr2}" FontSize="Micro" Padding="0,0,0,0"/>
-                                    <Label Grid.Row="2" Grid.Column="2" Text="{Binding DateTimeOriginalStr2}" FontSize="Micro" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="3" Grid.Column="0" Text="{Binding CreatedStr2}" FontSize="Micro" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="3" Grid.Column="1" Text="{Binding ModifiedStr2}" FontSize="Micro" Padding="0,0,0,0"/>
+                                    <Label Grid.Row="3" Grid.Column="2" Text="{Binding DateTimeOriginalStr2}" FontSize="Micro" Padding="0,0,0,0"/>
                                 </Grid>
                             </Frame>
                         </DataTemplate>
