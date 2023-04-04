@@ -42,6 +42,7 @@
             
             <!-- Main -->
             <StackLayout x:Name="slMain" IsVisible="True" Margin="10">
+                <!-- PART I -->
                 <!-- SD Search -->
                 <Label 
                     Text="Folder to search on the root of the sd card :"
@@ -81,6 +82,7 @@
                     Text="Root Folder (SD Card)"
                     IsVisible="false"/>
 
+                <!-- PART II : Filter and Search Button -->
                 <!-- DateTime Original Filter -->
                 <Label
                     Margin="0,5,0,0"
@@ -124,36 +126,83 @@
                     HorizontalOptions="Center"
                     IsVisible="false"/>
 
+                <!-- PART III : Progress Bars -->
                 <!-- Progress Bar -->
-                <ProgressBar 
-                    x:Name="prgBar"
-                    IsVisible="false"
-                    Progress="0.0" />
+                <Grid Margin="30,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <ProgressBar 
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        x:Name="prgBarFolder"
+                        IsVisible="false"
+                        Progress="0.0" />
 
-                <Label
-                    x:Name="lblCurrentFolder"
-                    HorizontalOptions="Center"
-                    IsVisible="false"/>
+                    <Label
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        x:Name="lblProgressFolder"
+                        HorizontalOptions="Center"
+                        FontSize="Micro"
+                        IsVisible="false"/>
+                    
+                    <Label
+                        Grid.Row="1"
+                        Grid.ColumnSpan="2"
+                        x:Name="lblCurrentFolder"
+                        HorizontalOptions="Center"
+                        FontSize="Micro"
+                        IsVisible="false"/>
+                </Grid>
 
-                <Label
-                    x:Name="lblProgress"
-                    HorizontalOptions="Center"
-                    IsVisible="false"/>
+                <Grid Margin="30,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <ProgressBar 
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        x:Name="prgBar"
+                        IsVisible="false"
+                        Progress="0.0" />
 
+                    <Label
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        x:Name="lblProgress"
+                        HorizontalOptions="Center"
+                        FontSize="Micro"
+                        IsVisible="false"/>
+                
+                    <Label
+                        Grid.Row="1"
+                        Grid.ColumnSpan="2"
+                        x:Name="lblCurrentFile"
+                        HorizontalOptions="Center"
+                        FontSize="Micro"
+                        IsVisible="false"/>
+                </Grid>
+
+                <!-- PART IV Logs, Results, DEWITT button and Options -->
                 <!-- Log -->
                 <Button
                     x:Name="btnLog"
                     Text="Log Results"
                     IsVisible="false"
                     Clicked="btnLog_Clicked"/>
-
-                <!-- Dewitt -->
-                <ImageButton
-                    x:Name="btnDewitt"
-                    Source="dewitt2.png"
-                    IsVisible="false"
-                    HeightRequest="175"
-                    Clicked="btnDewitt_Clicked"/>
 
                 <!-- Dewitt Options -->
                 <StackLayout 
@@ -179,11 +228,20 @@
                         Margin="-5,10"/>
                 </StackLayout>
 
+                
+                <!-- Dewitt -->
+                <ImageButton
+                    x:Name="btnDewitt"
+                    Source="dewitt2.png"
+                    IsVisible="false"
+                    HeightRequest="175"
+                    Clicked="btnDewitt_Clicked"/>
+                
+                <!-- PART V -->
                 <!-- Progress Bar -->
                 <ProgressBar 
                     x:Name="prgBarEXIF"
                     IsVisible="false"
-                    ProgressColor="DarkRed"
                     Progress="0.0" />
 
                 <Label
