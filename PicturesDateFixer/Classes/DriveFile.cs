@@ -1,10 +1,13 @@
-﻿namespace PicturesDateFixer;
+﻿using CommunityToolkit.Maui.Core.Primitives;
+
+namespace PicturesDateFixer;
 
 public partial class MainPage
 {
     public class DriveFile
     {
         public string Name { get; set; }
+        public string Folder { get; set; }
         public string FullPath { get; set; }
         public string Extension { get; set; }
         public DateTime Created { get; set; }

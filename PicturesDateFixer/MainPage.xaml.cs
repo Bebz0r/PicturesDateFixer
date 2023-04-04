@@ -16,18 +16,21 @@ namespace PicturesDateFixer;
 
 public partial class MainPage : ContentPage
 {
-    // Change status bar color ? Add the CommunityToolkit.Maui
+    // README : Features
+    #region README
+    // STATUS BAR COLOR ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Change status bar color ? Add the CommunityToolkit.Maui Nuget
     // Then add it in the MauiProgram.cs :
     // using CommunityToolkit.Maui;
 
-    //public static MauiApp CreateMauiApp()
-    //{
-    //    var builder = MauiApp.CreateBuilder();
-    //    builder
-    //        .UseMauiApp<App>()
-    //        // Initialize the .NET MAUI Community Toolkit by adding the below line of code
-    //        .UseMauiCommunityToolkit()
-    //        [...]
+    // public static MauiApp CreateMauiApp()
+    // {
+    //     var builder = MauiApp.CreateBuilder();
+    //     builder
+    //         .UseMauiApp<App>()
+    //         // Initialize the .NET MAUI Community Toolkit by adding the below line of code
+    //         .UseMauiCommunityToolkit()
+    //         [...]
     //
     // Then add it to the MainPage.xaml : in the <ContentPage> tag, reference the xaml as mct :
     // xmlns:mct="clr-namespace:CommunityToolkit.Maui.Behaviors;assembly=CommunityToolkit.Maui"
@@ -37,10 +40,35 @@ public partial class MainPage : ContentPage
     //      <mct:StatusBarBehavior StatusBarColor = "pink" />
     // </ContentPage.Behaviors>
 
+    // READ / WRITE TO SD CARD ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Add in the Android Manifest : <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    //
+    // In the Platforms / Android / MainActivity, add the OnCreate :
+    //
+    // public class MainActivity : MauiAppCompatActivity
+    // {
+    //     // Added this v
+    //     protected override void OnCreate(Bundle savedInstanceState)
+    //     {
+    //         if (!Android.OS.Environment.IsExternalStorageManager)
+    //         {
+    //             Intent intent = new Intent();
+    //             intent.SetAction(Android.Provider.Settings.ActionManageAppAllFilesAccessPermission);
+    //             Android.Net.Uri uri = Android.Net.Uri.FromParts("package", this.PackageName, null);
+    //             intent.SetData(uri);
+    //             StartActivity(intent);
+    //         }
+    //         base.OnCreate(savedInstanceState);
+    //     }
+    // }
+
+
+    #endregion
+
     // Fill which will be found
     List<DriveFile> foundFiles = new List<DriveFile>();
     // Exceptions
-    List<ExceptionCustom> exceptList = new List<ExceptionCustom>();
+    List<LogLine> exceptList = new List<LogLine>();
 
     // Target Folders Names
     List<PrefFolder> targetFolderList = new List<PrefFolder>();
@@ -333,7 +361,7 @@ public partial class MainPage : ContentPage
         string[] logicalDrives = Environment.GetLogicalDrives();
         
         // Exceptions
-        List<ExceptionCustom> exceptions = new List<ExceptionCustom>();
+        List<LogLine> exceptions = new List<LogLine>();
 
         // For each mounting points
         foreach (string drv in logicalDrives)
@@ -350,7 +378,7 @@ public partial class MainPage : ContentPage
             catch (Exception ex)
             {
                 //if (drv.Contains("/storage/emulated/0/Android/data"))
-                    exceptions.Add(new ExceptionCustom { Drive = drv, ExceptionMessage = ex.Message });
+                    exceptions.Add(new LogLine { Drive = drv, ExceptionMessage = ex.Message });
             }
         }
 
@@ -432,7 +460,7 @@ public partial class MainPage : ContentPage
         foundFiles = new List<DriveFile>();
 
         // Lists of Exception
-        exceptList = new List<ExceptionCustom>();
+        exceptList = new List<LogLine>();
 
         lblCurrentFolder.Text = "";
         prgBar.Progress = 0;
@@ -482,6 +510,7 @@ public partial class MainPage : ContentPage
                             // BASIC DATA ====================================================================
                             aDriveFile.FullPath = aFile;
                             aDriveFile.Name = System.IO.Path.GetFileName(aFile);
+                            aDriveFile.Folder = aTargetFolder.Name;
                             aDriveFile.Created = File.GetCreationTime(aFile);
                             aDriveFile.Modified = File.GetLastWriteTime(aFile);
                             aDriveFile.Extension = new FileInfo(aFile).Extension;
@@ -521,7 +550,7 @@ public partial class MainPage : ContentPage
                             }
                             catch (Exception ex)
                             {
-                                exceptList.Add(new ExceptionCustom { Drive = aDriveFile.FullPath, ExceptionMessage = ex.Message });
+                                exceptList.Add(new LogLine { Drive = aDriveFile.FullPath, ExceptionMessage = ex.Message });
                             }
 
                             // FILTERS =====================================================================
@@ -559,7 +588,7 @@ public partial class MainPage : ContentPage
                 }
                 catch (Exception ex)
                 {
-                    exceptList.Add(new ExceptionCustom { Drive = aTargetFolder.Name, ExceptionMessage = ex.Message });
+                    exceptList.Add(new LogLine { Drive = aTargetFolder.Name, ExceptionMessage = ex.Message });
                 }
             }
         }
@@ -618,7 +647,7 @@ public partial class MainPage : ContentPage
         using (var sw = new StreamWriter(logFileError))
         {
             sw.WriteLine("Realm|Error");
-            foreach (ExceptionCustom anException in exceptList)
+            foreach (LogLine anException in exceptList)
             {
                 sw.WriteLine($"{anException.Drive}|{anException.ExceptionMessage}");
             }
@@ -634,14 +663,16 @@ public partial class MainPage : ContentPage
     {
         int cnt = 0;
         int cntTotal = 0;
-        List<ExceptionCustom> successEXIFList = new List<ExceptionCustom>();
-        List<ExceptionCustom> exceptEXIFList = new List<ExceptionCustom>();
+        List<LogLine> successEXIFList = new List<LogLine>();
+        List<LogLine> exceptEXIFList = new List<LogLine>();
 
         foreach (DriveFile aDriveFile in foundFiles)
         {
+            string AdditionnalLog = "";
+
             // Progress
             cntTotal++;
-            lblProgressEXIF.Text = $"{cntTotal} / {foundFiles.Count()} - {Math.Round((double)cntTotal / foundFiles.Count() * 100)}%";
+            lblProgressEXIF.Text = $"{aDriveFile.Folder} - {cntTotal} / {foundFiles.Count()} - {Math.Round((double)cntTotal / foundFiles.Count() * 100)}%";
             await prgBarEXIF.ProgressTo((double)cntTotal / foundFiles.Count(), 10, Easing.Linear);
 
             try
@@ -656,81 +687,69 @@ public partial class MainPage : ContentPage
                     if (newDate == null)
                     {
                         // Unable to parse
-                        exceptEXIFList.Add(new ExceptionCustom { Drive = aDriveFile.FullPath, ExceptionMessage = "Unable to parse."});
+                        exceptEXIFList.Add(new LogLine { Drive = aDriveFile.FullPath, ExceptionMessage = "Unable to parse."});
                     }
                     else
-                    { 
+                    {
                         // Part II : Add EXIF data. Method depends on the file type
                         if (aDriveFile.Extension.ToLower() == ".jpg" || aDriveFile.Extension.ToLower() == ".jpeg")
                         {
-                            /*
-                            if (aDriveFile.Name == "2019_10_05_173730_JCS.JPG")
-                            {
-                                DateTime test = new DateTime(2023, 04, 02);
-                                DateTime testout;
+                            if (chkForReal.IsChecked)
+                            { 
                                 var fileJpg = ImageFile.FromFile(aDriveFile.FullPath);
-                                fileJpg.Properties.Set(ExifTag.DateTimeOriginal, test);
+                                fileJpg.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
                                 fileJpg.Save(aDriveFile.FullPath);
-
-                                var exifFile = ImageFile.FromFile(aDriveFile.FullPath);
-                                ExifProperty tagJpg = exifFile.Properties.Get(ExifTag.DateTimeOriginal);
-                                if (tagJpg != null)
-                                {
-                                    testout = (tagJpg as ExifDateTime).Value;
-                                }
                             }
                             else
                             {
-                            */
-                            
-                                var fileJpg = ImageFile.FromFile(aDriveFile.FullPath);
-                                fileJpg.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
-                                // Save for real
-                                if (chkForReal.IsChecked)
-                                    fileJpg.Save(aDriveFile.FullPath);
-                            //}
-                            cnt++;
-                            successEXIFList.Add(new ExceptionCustom { 
-                                Drive = aDriveFile.FullPath,
-                                ExceptionMessage = $"{aDriveFile.Extension.ToLower()} : " +
-                                $"from {(newDate == null ? "null" : newDate.Value.ToString("yyyy/MM/dd"))}" +
-                                $"to => {newDate.Value.ToString("yyyy/MM/dd HH:mm:ss")}"
-                            });
+                                AdditionnalLog = " - SKIPPED";
+                            }
                         }
                         else if (aDriveFile.Extension.ToLower() == ".png")
                         {
-                            // Do not work : ":"
-                            //DateTime newDateTimePNG = new DateTime(2023, 03, 30);
-                            //var filePng = ImageFile.FromFile(pathPNG);
-                            //filePng.Properties.Set(ExifTag.PNGCreationTime, "2021:06:30 13:37:00");
-                            //filePng.Save(pathPNG);
-                            cnt++;
-                            successEXIFList.Add(new ExceptionCustom
+                            if (chkForReal.IsChecked)
                             {
-                                Drive = aDriveFile.FullPath,
-                                ExceptionMessage = $"{aDriveFile.Extension.ToLower()} : " +
-                                $"from {(newDate == null ? "null" : newDate.Value.ToString("yyyy/MM/dd"))}" +
-                                $"to => TO IMPLEMENT"
-                            }); ;
-
+                                // To Implement
+                                AdditionnalLog = " - TO IMPLEMENT";
+                                // Do not work : ":"
+                                //DateTime newDateTimePNG = new DateTime(2023, 03, 30);
+                                //var filePng = ImageFile.FromFile(pathPNG);
+                                //filePng.Properties.Set(ExifTag.PNGCreationTime, "2021:06:30 13:37:00");
+                                //filePng.Save(pathPNG);
+                            }
+                            else
+                            {
+                                AdditionnalLog = " - SKIPPED - TO IMPLEMENT";
+                            }
                         }
                         else if (aDriveFile.Extension.ToLower() == ".gif")
                         {
-                            cnt++;
-                            successEXIFList.Add(new ExceptionCustom
+                            if (chkForReal.IsChecked)
                             {
-                                Drive = aDriveFile.FullPath,
-                                ExceptionMessage = $"{aDriveFile.Extension.ToLower()} : " +
-                                $"from {(newDate == null ? "null" : newDate.Value.ToString("yyyy/MM/dd"))}" +
-                                $"to => TO IMPLEMENT"
-                            }); ;
+                                // To Implement
+                                AdditionnalLog = " - SKIPPED - TO IMPLEMENT";
+                            }
+                            else
+                            {
+                                AdditionnalLog = " - SKIPPED";
+                            }
                         }
+
+                        // Log the result
+                        cnt++;
+                        successEXIFList.Add(new LogLine
+                        {
+                            Drive = aDriveFile.FullPath,
+                            ExceptionMessage = $"from {(aDriveFile.DateTimeOriginal == null ? "null" : aDriveFile.DateTimeOriginal.Value.ToString("yyyy/MM/dd HH:mm:ss"))} " +
+                                               $"to => {newDate.Value.ToString("yyyy/MM/dd HH:mm:ss")}" +
+                                               $"{AdditionnalLog}"
+                        });
                     }
                 }
             }
             catch(Exception ex)
             {
-                exceptEXIFList.Add(new ExceptionCustom { Drive = aDriveFile.FullPath, ExceptionMessage = ex.Message });
+                exceptEXIFList.Add(new LogLine { Drive = aDriveFile.FullPath, ExceptionMessage = ex.Message });
             }
         }
 
@@ -742,7 +761,7 @@ public partial class MainPage : ContentPage
         using (var sw = new StreamWriter(logFileSuccess))
         {
             sw.WriteLine("Realm|Result");
-            foreach (ExceptionCustom aSuccess in successEXIFList)
+            foreach (LogLine aSuccess in successEXIFList)
             {
                 sw.WriteLine($"{aSuccess.Drive}|{aSuccess.ExceptionMessage}");
             }
@@ -756,7 +775,7 @@ public partial class MainPage : ContentPage
         using (var sw = new StreamWriter(logFileError))
         {
             sw.WriteLine("Realm|Error");
-            foreach (ExceptionCustom anException in exceptEXIFList)
+            foreach (LogLine anException in exceptEXIFList)
             {
                 sw.WriteLine($"{anException.Drive}|{anException.ExceptionMessage}");
             }

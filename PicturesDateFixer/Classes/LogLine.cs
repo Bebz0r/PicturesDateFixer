@@ -2,8 +2,9 @@
 
 public partial class MainPage
 {
-    public class ExceptionCustom
+    public class LogLine
     {
+
         public string Drive { get; set; }
         public string ExceptionMessage { get; set; }
     }
