@@ -263,9 +263,9 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="85"/>
                         <ColumnDefinition/>
-                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="85"/>
                     </Grid.ColumnDefinitions>
 
                     <Label

@@ -868,7 +868,31 @@ public partial class MainPage : ContentPage
                     sw.WriteLine($"{anException.Drive}|{anException.ExceptionMessage}");
                 }
             }
-            await DisplayAlert("EXIF Tagging Done", $"{cnt} out of {cntTotal} done.\r\n {exceptEXIFList.Count} errors loggued in {logFileError} ", "Kewl");
+
+            if (chkForReal.IsChecked)
+            {
+                await DisplayAlert("EXIF Tagging Done", $"{cnt} out of {cntTotal} done.\r\n" +
+                                                        $"\r\n" +
+                                                        $"Results loggued in :\r\n" +
+                                                        $"{logFileSuccess}\r\n" +
+                                                        $"\r\n" +
+                                                        $"{exceptEXIFList.Count} errors loggued in :\r\n" +
+                                                        $"{logFileError}\r\n" +
+                                                        $"\r\n" +
+                                                        $"Changes may take some time to reflect. Reboot device if needed.", "Kewl");
+            }
+            else
+            {
+                await DisplayAlert("EXIF Simulation Done", $"{cnt} out of {cntTotal} done.\r\n" +
+                                                           $"\r\n" +
+                                                           $"Results loggued in :\r\n" +
+                                                           $"{logFileSuccess}\r\n" +
+                                                           $"\r\n" +
+                                                           $"Possible errors ({exceptEXIFList.Count} ) loggued in :\r\n" +
+                                                           $"{logFileError}\r\n" +
+                                                           $"\r\n" +
+                                                           $"Review the results and relaunch with the 'Do It For Real !' checkbox ticked", "Kewl");
+            }
         }
     }
 
