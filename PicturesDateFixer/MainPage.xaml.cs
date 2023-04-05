@@ -12,6 +12,9 @@ using System.Text.RegularExpressions;
 using CommunityToolkit.Maui.Core.Primitives;
 using CommunityToolkit.Maui.Alerts;
 using Microsoft.Maui.Controls.Compatibility;
+using System.Reflection.Metadata;
+using System.Diagnostics;
+
 namespace PicturesDateFixer;
 
 public partial class MainPage : ContentPage
@@ -88,6 +91,9 @@ public partial class MainPage : ContentPage
 
         // Update the collection view preferences
         RefreshCvPrefs();
+
+        // Create the Log Folder
+        Directory.CreateDirectory("/storage/3439-3532/PicturesDateFixer");
     }
 
     // MISC AND HELPERS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -237,8 +243,8 @@ public partial class MainPage : ContentPage
     }
     #endregion
 
-    #region UI PARTS - SHOW / HIDE
-    // UI PARTS - SHOW / HIDE
+    // UI PARTS - SHOW / HIDE + OTHER UI
+    #region UI PARTS - SHOW / HIDE + OTHER UI
     // Part II : DateTime Start and End Selector, Search Folder Button
     private void ShowPartII(bool show)
     {
@@ -315,6 +321,57 @@ public partial class MainPage : ContentPage
             lblProgressEXIFPercent.Text = "";
             lblCurrentEXIF.Text = "";
         }
+    }
+
+    // Search box changed
+    private void schFile_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // Refresh the view
+        cvResults.ItemsSource = foundFiles.Where(f => f.Name.ToLower().Contains(e.NewTextValue.ToLower())).ToList().Take(10);
+    }
+
+    // a cvResults Button has been clicked
+    private async void btnExportEXIFData_Clicked(object sender, EventArgs e)
+    {
+        Button theButton = (Button)sender;
+        DriveFile theFile = (DriveFile)theButton.BindingContext;
+
+        // Get the file
+        var exifFile = ImageFile.FromFile(theFile.FullPath);
+
+        // Log Part : EXIF Data
+        string logFileEXIF = $"{lblRootFolder.Text}/PicturesDateFixer/EXIF_Data.txt";
+        if (File.Exists(logFileEXIF))
+            File.Delete(logFileEXIF);
+
+        using (var sw = new StreamWriter(logFileEXIF))
+        {
+            sw.WriteLine($"EXIF Tags for {theFile.FullPath} :");
+            Debug.WriteLine("-------------------------------");
+            Debug.WriteLine("GOING THROUGH ALL TAGS...");
+            foreach (ExifTag aTag in (ExifTag[])Enum.GetValues(typeof(ExifTag)))
+            {
+                ExifProperty tagPng = exifFile.Properties.Get(aTag);
+                if (tagPng != null)
+                {
+                    // :
+                    //DateTime DateTimeOriginal = DateTime.ParseExact(tagPng.Value.ToString(),
+                    //                                        "yyyy:MM:dd HH:mm:ss",
+                    //                                        System.Globalization.CultureInfo.InvariantCulture);
+                    sw.WriteLine($"GOT {aTag.ToString()} ==> {tagPng.Value.ToString()}");
+                    Debug.WriteLine($"GOT {aTag.ToString()} ==> {tagPng.Value.ToString()}");
+                }
+                else
+                {
+                    sw.WriteLine($"NO : {aTag.ToString()}");
+                    Debug.WriteLine($"NO : {aTag.ToString()}");
+                }
+            }
+        }
+        Debug.WriteLine("DONE !");
+
+        await DisplayAlert("Export Done", $"File Export is done in {logFileEXIF}.", "Kewl");
+
     }
     #endregion
 
@@ -444,6 +501,7 @@ public partial class MainPage : ContentPage
         // Refresh the prefs
         RefreshCvPrefs();
     }
+
     // Invert the selection
     private void btnSelectInversePrefs_Clicked(object sender, EventArgs e)
     {
@@ -454,10 +512,20 @@ public partial class MainPage : ContentPage
         RefreshCvPrefs();
     }
 
+    // A checkbox has been ticked/unticked
     private void chkPref_Changed(object sender, CheckedChangedEventArgs e)
     {
+        PrefFolder theFolder;
+        if (sender is CheckBox)
+        { 
         CheckBox theCheckbox = (CheckBox)sender;
-        PrefFolder theFolder = (PrefFolder)theCheckbox.BindingContext;
+        theFolder = (PrefFolder)theCheckbox.BindingContext;
+        }
+        else
+        {
+            Label theLabel = (Label)sender;
+            theFolder = (PrefFolder)theLabel.BindingContext;
+        }
 
         PrefFolder aPref = targetFolderList.FirstOrDefault(x => x.Name == theFolder.Name);
         if (aPref != null)
@@ -581,7 +649,6 @@ public partial class MainPage : ContentPage
                     // For each directory, match the searched one if found
                     foreach (var aFile in theFiles)
                     {
-
                         // Progress File
                         cnt++;
                         lblCurrentFile.Text = System.IO.Path.GetFileName(aFile);
@@ -627,7 +694,7 @@ public partial class MainPage : ContentPage
                                 }
                                 else if (aDriveFile.Extension.ToLower() == ".gif")
                                 {
-                                    aDriveFile.DateTimeOriginal = null;
+                                    // Field does not exist
                                 }
                                 else
                                 {
@@ -703,7 +770,7 @@ public partial class MainPage : ContentPage
     private async void btnLog_Clicked(object sender, EventArgs e)
     {
         // Log Part : Files
-        string logFile = $"{lblRootFolder.Text}/Files.txt";
+        string logFile = $"{lblRootFolder.Text}/PicturesDateFixer/Files.txt";
         if (File.Exists(logFile))
             File.Delete(logFile);
 
@@ -721,7 +788,7 @@ public partial class MainPage : ContentPage
         }
 
         // Log Part : Errors
-        string logFileError = $"{lblRootFolder.Text}/Files_Errors.txt";
+        string logFileError = $"{lblRootFolder.Text}/PicturesDateFixer/Files_Errors.txt";
         if (File.Exists(logFileError))
             File.Delete(logFileError);
 
@@ -815,6 +882,9 @@ public partial class MainPage : ContentPage
                                 if (chkForReal.IsChecked)
                                 {
                                     // To Implement
+                                    File.SetCreationTime(aDriveFile.FullPath, newDate.Value);
+                                    File.SetLastWriteTime(aDriveFile.FullPath, newDate.Value);
+                                    File.SetLastAccessTime(aDriveFile.FullPath, newDate.Value);
                                     AdditionnalLog = " - SKIPPED - TO IMPLEMENT";
                                 }
                                 else
@@ -842,7 +912,7 @@ public partial class MainPage : ContentPage
             }
 
             // Log Part : Success
-            string logFileSuccess = $"{lblRootFolder.Text}/Files_Success_EXIF.txt";
+            string logFileSuccess = $"{lblRootFolder.Text}/PicturesDateFixer/Files_Success_EXIF.txt";
             if (File.Exists(logFileSuccess))
                 File.Delete(logFileSuccess);
 
@@ -856,7 +926,7 @@ public partial class MainPage : ContentPage
             }
 
             // Log Part : Errors
-            string logFileError = $"{lblRootFolder.Text}/Files_Errors_EXIF.txt";
+            string logFileError = $"{lblRootFolder.Text}/PicturesDateFixer/Files_Errors_EXIF.txt";
             if (File.Exists(logFileError))
                 File.Delete(logFileError);
 
@@ -895,6 +965,7 @@ public partial class MainPage : ContentPage
             }
         }
     }
+
 
     #endregion
 }
