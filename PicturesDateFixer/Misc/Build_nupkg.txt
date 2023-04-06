@@ -1,0 +1,13 @@
+Extract exiflibrary-master.zip
+Open it with VS Studio
+Build it to make sure everything is OK
+
+- Update infos :
+Right click the Project > Properties
+Change :
+> Applcation > General : Assembly Name
+> Package > General : Package ID, Title, Package Version, Authors
+
+- Generate the .nupkg :
+Right click the project > Pack
+See the Output window for the path of the .nupkg
