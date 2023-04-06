@@ -408,7 +408,7 @@
 
                     <CheckBox
                         x:Name="chkPng"
-                        IsChecked="true"/>
+                        IsChecked="false"/>
 
                     <Label
                         Margin="-5,10,0,0"
@@ -426,7 +426,7 @@
 
                     <CheckBox
                         x:Name="chkMp4"
-                        IsChecked="true"/>
+                        IsChecked="false"/>
 
                     <Label
                         Margin="-5,10,0,0"

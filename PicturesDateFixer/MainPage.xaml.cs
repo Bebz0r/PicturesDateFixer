@@ -136,9 +136,9 @@ public partial class MainPage : ContentPage
                 ExifProperty tagPng = pngFile.Properties.Get(ExifTag.PNGCreationTime);
                 if (tagPng != null)
                 {
-                    // :
+                    // Warning : the yyyy MM dd separator IS ':'
                     aDriveFile.DateTimeOriginal = DateTime.ParseExact(tagPng.Value.ToString(),
-                                                          "yyyy/MM/dd HH:mm:ss",
+                                                          "yyyy:MM:dd HH:mm:ss",
                                                           System.Globalization.CultureInfo.InvariantCulture);
                 }
             }
@@ -154,6 +154,7 @@ public partial class MainPage : ContentPage
                  * The extended file properties can be obtained by using Folder.GetDetailsOf() method.
                  * The Media Created Date can be retrieved using a property id of 177.
                 */
+                
                 aDriveFile.DateTimeOriginal = null;
             }
             else
@@ -225,10 +226,8 @@ public partial class MainPage : ContentPage
                     {
                         if ((fromDewitt & chkForReal.IsChecked) || !fromDewitt)
                         {
-                            // To Implement
-                            File.SetCreationTime(aDriveFile.FullPath, newDate.Value);
+                            // No metadata : it's the Modified Date (LastWriteTime). Note that it will also overwrite Created Date
                             File.SetLastWriteTime(aDriveFile.FullPath, newDate.Value);
-                            File.SetLastAccessTime(aDriveFile.FullPath, newDate.Value);
                         }
                         else
                         {
@@ -875,7 +874,6 @@ public partial class MainPage : ContentPage
             audioPlayerTick.Play();
         }
     }
-    #endregion
 
     // Log the results of the search
     private async void btnLog_Clicked(object sender, EventArgs e)
@@ -914,6 +912,7 @@ public partial class MainPage : ContentPage
 
         await DisplayAlert("Export Done", $"File Export is done in {logFile}.\r\n Errors in {logFileError} ", "Kewl");
     }
+    #endregion
 
     // ADD EXIF DATA ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #region ADD EXIF DATA
@@ -931,6 +930,17 @@ public partial class MainPage : ContentPage
 
             int cnt = 0;
             int cntTotal = 0;
+
+            if (foundFiles.Where(x => x.Extension != ".mp4").Any())
+                await DisplayAlert("Warning : mp4 files", "mp4 where found but are not supported (yet) :\r\n\r\n" +
+                                   "A way to get/set the 'Media Created' field of the files have to be found.", "OK");
+
+            if (foundFiles.Where(x => x.Extension != ".png").Any())
+                await DisplayAlert("Warning : png files", "png where found but are not fully supported (yet) :\r\n\r\n" +
+                                   "ExifTag.PNGCreationTime can be fetched/set, but is not the field used to group pictures.\r\n\r\n" +
+                                   "Modifying it in the Gallery App to a specific date then parsing all the ExifTags yields no result.\r\n\r\n" +
+                                   "Loading the modified png file in exif.tools shows the updated value as DateTimeOriginal though, like the jpg, " +
+                                   "but ExifTag.DateTimeOriginal yields nothing.", "OK");
 
             foreach (DriveFile aDriveFile in foundFiles)
             {
@@ -1014,7 +1024,21 @@ public partial class MainPage : ContentPage
         // Do the Work for on file
         WriteEXIFforFile(aDriveFile, false);
 
-        // TODO : refresh the item in foundFiles
+        // refresh the item in foundFiles
+        foreach (DriveFile aFile in foundFiles)
+        {
+            if (aFile == aDriveFile)
+            {
+                // Fetch the new file info
+                DriveFile newInfo = ReadEXIFforFile(aFile.FullPath);
+                aFile.DateTimeOriginal = newInfo.DateTimeOriginal;
+            }
+        }
+
+        // Update the cvResults
+        schFile.Text = "";
+        cvResults.Header = $"{foundFiles.Count} {(foundFiles.Count > 1 ? "files" : "file")} found - showing first {cvFoundFilesDisplay} :";
+        cvResults.ItemsSource = foundFiles.Take(cvFoundFilesDisplay);
     }
     #endregion
 }
