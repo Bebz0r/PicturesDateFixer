@@ -57,7 +57,7 @@
                 <Button
                     Margin="0,0,0,5"
                     x:Name="btnGetSDFolder"
-                    Text="Search SD Mount Point"
+                    Text="Search for SD Mount Point"
                     Clicked="btnFindSDPath"
                     HorizontalOptions="Center" />
 
@@ -68,7 +68,7 @@
                     HorizontalOptions="Center"/>
 
                 <!-- SD Mount point selector-->
-                <CollectionView x:Name="cvDrives">
+                <CollectionView x:Name="cvDrives" Margin="0,0,0,5">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <Button Text="{Binding Name}" Clicked="cvButton_Clicked" Padding="0,5,0,0"/>
@@ -82,53 +82,9 @@
                     Text="Root Folder (SD Card)"
                     IsVisible="false"/>
 
-                <!-- PART II : Filter and Search Button -->
-                <!-- DateTime Original Filter -->
-                <Label
-                    Margin="0,5,0,0"
-                    x:Name="lblDatePickerTitle"
-                    HorizontalOptions="Center"
-                    Text="EXIF DateTime Original filter :"
-                    IsVisible="false"/>
-                
-                <StackLayout 
-                    x:Name="slDatePicker"
-                    Orientation="Horizontal" 
-                    HorizontalOptions="Center">
-
-                    <CheckBox
-                        x:Name="chkUseDatePickerStart"
-                        IsChecked="false"
-                        IsVisible="false"/>
-
-                    <DatePicker
-                        x:Name="dpPickerStart"
-                        HorizontalOptions="Center" Format="dd/MM/yyyy"
-                        Date="11/03/2022"
-                        IsVisible="false"/>
-
-                    <CheckBox
-                        x:Name="chkUseDatePickerEnd"
-                        IsChecked="false"
-                        IsVisible="false"/>
-
-                    <DatePicker
-                        x:Name="dpPickerEnd"
-                        HorizontalOptions="Center" Format="dd/MM/yyyy"
-                        Date="11/03/2022"
-                        IsVisible="false"/>
-                </StackLayout>
-
-                <Button
-                    x:Name="btnSearchFolder"
-                    Text="Search Folders"
-                    Clicked="btnSearchFolders_Clicked"
-                    HorizontalOptions="Center"
-                    IsVisible="false"/>
-
-                <!-- PART III : Progress Bars -->
+                <!-- PART II : Progress Bars -->
                 <!-- Progress Bar -->
-                <Grid>
+                <Grid Margin="0,0,0,5">
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                         <RowDefinition/>
@@ -171,7 +127,7 @@
                         IsVisible="false"/>
                 </Grid>
 
-                <Grid>
+                <Grid Margin="0,0,0,5">
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                         <RowDefinition/>
@@ -214,7 +170,7 @@
                         IsVisible="false"/>
                 </Grid>
 
-                <!-- PART IV Logs, Results, DEWITT button and Options -->
+                <!-- PART III Logs, Results, DEWITT button and Options -->
                 <!-- Log -->
                 <Button
                     x:Name="btnLog"
@@ -255,7 +211,7 @@
                     HeightRequest="175"
                     Clicked="btnDewitt_Clicked"/>
                 
-                <!-- PART V -->
+                <!-- PART IV -->
                 <!-- Progress Bar -->
                 <Grid>
                     <Grid.RowDefinitions>
@@ -387,13 +343,103 @@
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
+                <BoxView HeightRequest="1" Color="LightGray" Margin="20,15,20,0"/>
+                
+                <!-- DateTime Original Filter -->
+                <Label
+                        Margin="0,5,0,0"
+                        x:Name="lblDatePickerTitle"
+                        HorizontalOptions="Center"
+                        Text="- EXIF DateTime Original to search -"/>
+
+                <StackLayout 
+                    x:Name="slDatePicker"
+                    Orientation="Horizontal" 
+                    HorizontalOptions="Center">
+
+                    <CheckBox
+                        x:Name="chkUseDatePickerStart"
+                        IsChecked="false"/>
+
+                    <DatePicker
+                        x:Name="dpPickerStart"
+                        HorizontalOptions="Center" Format="dd/MM/yyyy"
+                        Date="11/03/2022"/>
+
+                    <CheckBox
+                        x:Name="chkUseDatePickerEnd"
+                        IsChecked="false"/>
+
+                    <DatePicker
+                        x:Name="dpPickerEnd"
+                        HorizontalOptions="Center" Format="dd/MM/yyyy"/>
+                </StackLayout>
+                <BoxView HeightRequest="1" Color="LightGray" Margin="20,15,20,0"/>
+
+                <!-- DateTime Original Filter -->
+                <Label
+                        Margin="0,5,0,0"
+                        x:Name="lblFileTypeTitle"
+                        HorizontalOptions="Center"
+                        Text="- File Type(s) to search -"/>
+
+                <StackLayout 
+                    x:Name="slFileTypes"
+                    Orientation="Horizontal" 
+                    HorizontalOptions="Center">
+
+                    <CheckBox
+                        x:Name="chkJpg"
+                        IsChecked="true"/>
+
+                    <Label
+                        Margin="-5,10,0,0"
+                        x:Name="lblchkJpg"
+                        Text=".jpg"/>
+
+                    <CheckBox
+                        x:Name="chkJpeg"
+                        IsChecked="true"/>
+
+                    <Label
+                        Margin="-5,10,0,0"
+                        x:Name="lblchkJpeg"
+                        Text=".jpeg"/>
+
+                    <CheckBox
+                        x:Name="chkPng"
+                        IsChecked="true"/>
+
+                    <Label
+                        Margin="-5,10,0,0"
+                        x:Name="lblchkPng"
+                        Text=".png"/>
+
+                    <CheckBox
+                        x:Name="chkGif"
+                        IsChecked="true"/>
+
+                    <Label
+                        Margin="-5,10,0,0"
+                        x:Name="lblchkGif"
+                        Text=".gif"/>
+
+                    <CheckBox
+                        x:Name="chkMp4"
+                        IsChecked="true"/>
+
+                    <Label
+                        Margin="-5,10,0,0"
+                        x:Name="lblchkMp4"
+                        Text=".mp4"/>
+                </StackLayout>
             </StackLayout>
             
             <!-- Results -->
             <StackLayout x:Name="slResults" IsVisible="False">
                 <SearchBar Placeholder="Search File" x:Name="schFile" FontSize="Small" TextChanged="schFile_TextChanged"/>
                 
-                <CollectionView x:Name="cvResults" EmptyView="No file found." Header="First xx Files found :" HeightRequest="600" Margin="0,10,0,0">
+                <CollectionView x:Name="cvResults" EmptyView="No file found." Header="First xx Files found :" HeightRequest="600" Margin="10,10,10,0">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <Frame Padding="2,5,2,10" Margin="0,0,0,2" CornerRadius="3">
@@ -421,7 +467,8 @@
                                     <Label  Grid.Row="3" Grid.Column="1" HorizontalOptions="Center" Text="{Binding ModifiedStr2}" FontSize="Micro" Padding="0,0,0,0"/>
                                     <Label  Grid.Row="3" Grid.Column="2" HorizontalOptions="Center" Text="{Binding DateTimeOriginalStr2}" FontSize="Micro" Padding="0,0,0,0"/>
 
-                                    <Button Grid.Row="4" Grid.ColumnSpan="3" Text="export image EXIF data" FontSize="Micro" Padding="0,0,0,0" Clicked="btnExportEXIFData_Clicked"/>
+                                    <Button Grid.Row="4" Grid.ColumnSpan="2" Text="export all image EXIF data" FontSize="Micro" Padding="0,0,0,0" Clicked="btnExportEXIFData_Clicked" Margin="10,0,10,0"/>
+                                    <Button Grid.Row="4" Grid.Column="3" Grid.ColumnSpan="1" Text="rewrite EXIF data" FontSize="Micro" Padding="0,0,0,0" Clicked="btnRewriteEXIFforFile_Clicked" Margin="0,0,10,0"/>
                                 </Grid>
                             </Frame>
                         </DataTemplate>

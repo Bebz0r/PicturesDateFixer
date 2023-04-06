@@ -57,7 +57,7 @@ public partial class MainPage
         {
             get
             {
-                return (DateTimeOriginal == null ? null : DateTimeOriginal.Value.ToString("dd/MM/yyyy HH:mm"));
+                return (DateTimeOriginal == null ? "absent" : DateTimeOriginal.Value.ToString("dd/MM/yyyy HH:mm"));
             }
         }
 

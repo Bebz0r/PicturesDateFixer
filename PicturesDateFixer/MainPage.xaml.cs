@@ -68,8 +68,13 @@ public partial class MainPage : ContentPage
 
     // Fill which will be found
     List<DriveFile> foundFiles = new List<DriveFile>();
-    // Exceptions
+    // Found files to display in the list
+    int cvFoundFilesDisplay = 10;
+
+    // Logs : exceptions of findings, sucess of EXIFing, exceptions of EXIFing
     List<LogLine> exceptList = new List<LogLine>();
+    List<LogLine> successEXIFList = new List<LogLine>();
+    List<LogLine> exceptEXIFList = new List<LogLine>();
 
     // Target Folders Names
     List<PrefFolder> targetFolderList;
@@ -79,6 +84,7 @@ public partial class MainPage : ContentPage
         InitializeComponent();
     }
 
+    // Initialisation : get preferences, create the log directory
     protected override void OnAppearing()
     {
         base.OnAppearing();
@@ -96,9 +102,173 @@ public partial class MainPage : ContentPage
         Directory.CreateDirectory("/storage/3439-3532/PicturesDateFixer");
     }
 
-    // MISC AND HELPERS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // vv REGEX FOR FILE RECOGNITION GO HERE vv
-    #region MISC AND HELPERS
+    // EXIF READING AND EXTRACTION, AND REGEX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #region EXIF READING AND EXTRACTION, AND REGEX
+    // This function will read EXIF File Data.
+    private DriveFile ReadEXIFforFile(string FilePath)
+    {
+        DriveFile aDriveFile = new DriveFile();
+        // BASIC DATA ====================================================================
+        aDriveFile.FullPath = FilePath;
+        aDriveFile.Name = System.IO.Path.GetFileName(FilePath);
+        aDriveFile.Folder = new FileInfo(FilePath).DirectoryName;
+        aDriveFile.Created = File.GetCreationTime(FilePath);
+        aDriveFile.Modified = File.GetLastWriteTime(FilePath);
+        aDriveFile.Extension = new FileInfo(FilePath).Extension;
+
+        // EXIF DATA =====================================================================
+        // Use of Nuget : EXIFLibNet : GET
+        try
+        {
+
+            if (aDriveFile.Extension.ToLower() == ".jpg" || aDriveFile.Extension.ToLower() == ".jpeg")
+            {
+                var jpgFile = ImageFile.FromFile(FilePath);
+                ExifProperty tagJpg = jpgFile.Properties.Get(ExifTag.DateTimeOriginal);
+                if (tagJpg != null)
+                {
+                    aDriveFile.DateTimeOriginal = (tagJpg as ExifDateTime).Value;
+                }
+            }
+            else if (aDriveFile.Extension.ToLower() == ".png")
+            {
+                var pngFile = ImageFile.FromFile(FilePath);
+                ExifProperty tagPng = pngFile.Properties.Get(ExifTag.PNGCreationTime);
+                if (tagPng != null)
+                {
+                    // :
+                    aDriveFile.DateTimeOriginal = DateTime.ParseExact(tagPng.Value.ToString(),
+                                                          "yyyy/MM/dd HH:mm:ss",
+                                                          System.Globalization.CultureInfo.InvariantCulture);
+                }
+            }
+            else if (aDriveFile.Extension.ToLower() == ".gif")
+            {
+                // Field does not exist : it's the Modified Field
+                aDriveFile.DateTimeOriginal = aDriveFile.Modified;
+            }
+            else if (aDriveFile.Extension.ToLower() == ".mp4")
+            {
+                // To Implement.
+                /*
+                 * The extended file properties can be obtained by using Folder.GetDetailsOf() method.
+                 * The Media Created Date can be retrieved using a property id of 177.
+                */
+                aDriveFile.DateTimeOriginal = null;
+            }
+            else
+            {
+                aDriveFile.DateTimeOriginal = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            exceptList.Add(new LogLine { Drive = aDriveFile.FullPath, ExceptionMessage = ex.Message });
+        }
+
+        return aDriveFile;
+    }
+
+    // This function will write EXIF File Data.
+    // If it comes from dewitt, it'll take the options (overwrite & for real checkbox)
+    // other wise, it'll be default values : Overwrite & For Real
+    private void WriteEXIFforFile(DriveFile aDriveFile, bool fromDewitt)
+    {
+        try
+        {
+            string AdditionnalLog = "";
+
+            // Add EXIF Tags for images lacking one or if Overwrite is checked
+            if ((fromDewitt && (aDriveFile.DateTimeOriginal == null || chkOverwrite.IsChecked)) || !fromDewitt)
+            {
+                // Part I : Use Regex to identify file naming type and extract date from file name
+                string fileWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(aDriveFile.Name);
+
+                DateTime? newDate = GetDateTimeFromFileName(fileWithoutExtension);
+                if (newDate == null)
+                {
+                    // Unable to parse
+                    exceptEXIFList.Add(new LogLine { Drive = aDriveFile.FullPath, ExceptionMessage = "Unable to parse." });
+                }
+                else
+                {
+                    // Part II : Add EXIF data. Method depends on the file type
+                    if (aDriveFile.Extension.ToLower() == ".jpg" || aDriveFile.Extension.ToLower() == ".jpeg")
+                    {
+                        if ((fromDewitt & chkForReal.IsChecked) || !fromDewitt)
+                        {
+                            var fileJpg = ImageFile.FromFile(aDriveFile.FullPath);
+                            fileJpg.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
+                            fileJpg.Save(aDriveFile.FullPath);
+                        }
+                        else
+                        {
+                            AdditionnalLog = " - SKIPPED";
+                        }
+                    }
+                    else if (aDriveFile.Extension.ToLower() == ".png")
+                    {
+                        if ((fromDewitt & chkForReal.IsChecked) || !fromDewitt)
+                        {
+                            // To Implement
+                            AdditionnalLog = " - TO IMPLEMENT";
+                            //var filePng = ImageFile.FromFile(aDriveFile.FullPath);
+                            //filePng.Properties.Set(ExifTag.PNGCreationTime,newDate.Value);
+                            //filePng.Save(aDriveFile.FullPath);
+                        }
+                        else
+                        {
+                            AdditionnalLog = " - SKIPPED";
+                        }
+                    }
+                    else if (aDriveFile.Extension.ToLower() == ".gif")
+                    {
+                        if ((fromDewitt & chkForReal.IsChecked) || !fromDewitt)
+                        {
+                            // To Implement
+                            File.SetCreationTime(aDriveFile.FullPath, newDate.Value);
+                            File.SetLastWriteTime(aDriveFile.FullPath, newDate.Value);
+                            File.SetLastAccessTime(aDriveFile.FullPath, newDate.Value);
+                        }
+                        else
+                        {
+                            AdditionnalLog = " - SKIPPED";
+                        }
+                    }
+                    else if (aDriveFile.Extension.ToLower() == ".mp4")
+                    {
+                        if ((fromDewitt & chkForReal.IsChecked) || !fromDewitt)
+                        {
+                            // To Implement.
+                            /*
+                             * The extended file properties can be obtained by using Folder.GetDetailsOf() method.
+                             * The Media Created Date can be retrieved using a property id of 177.
+                            */
+                            AdditionnalLog = " - TO IMPLEMENT";
+                        }
+                        else
+                        {
+                            AdditionnalLog = " - SKIPPED";
+                        }
+                    }
+
+                    // Log the result
+                    successEXIFList.Add(new LogLine
+                    {
+                        Drive = aDriveFile.FullPath,
+                        ExceptionMessage = $"from {(aDriveFile.DateTimeOriginal == null ? "null" : aDriveFile.DateTimeOriginal.Value.ToString("yyyy/MM/dd HH:mm:ss"))} " +
+                                           $"to => {newDate.Value.ToString("yyyy/MM/dd HH:mm:ss")}" +
+                                           $"{AdditionnalLog}"
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            exceptEXIFList.Add(new LogLine { Drive = aDriveFile.FullPath, ExceptionMessage = ex.Message });
+        }
+    }
+
     // Extract a Datetime based on the file name
     private static DateTime? GetDateTimeFromFileName(string fileWithoutExtension)
     {
@@ -245,23 +415,8 @@ public partial class MainPage : ContentPage
 
     // UI PARTS - SHOW / HIDE + OTHER UI
     #region UI PARTS - SHOW / HIDE + OTHER UI
-    // Part II : DateTime Start and End Selector, Search Folder Button
+    // Part II : Search File Progress Bars
     private void ShowPartII(bool show)
-    {
-        
-        lblDatePickerTitle.IsVisible = show;
-        
-        chkUseDatePickerStart.IsVisible = show;
-        dpPickerStart.IsVisible = show;
-
-        chkUseDatePickerEnd.IsVisible = show;
-        dpPickerEnd.IsVisible = show;
-
-        btnSearchFolder.IsVisible = show;
-    }
-
-    // Part III : Search File Progress Bars
-    private void ShowPartIII(bool show)
     {
         lblProgressFolderValue.IsVisible = show;
         prgBarFolder.IsVisible = show;
@@ -288,8 +443,8 @@ public partial class MainPage : ContentPage
         }
     }
 
-    // PART IV : Logs, Results, DEWITT button and Options 
-    private void ShowPartIV(bool show)
+    // PART III : Logs, Results, DEWITT button and Options 
+    private void ShowPartIII(bool show)
     {
         btnLog.IsVisible = show;
 
@@ -305,8 +460,8 @@ public partial class MainPage : ContentPage
             cvResults.ItemsSource = null;
     }
 
-    // PART V : DEWITT progress bar
-    private void ShowPartV(bool show)
+    // PART IV : DEWITT progress bar
+    private void ShowPartIV(bool show)
     {
         lblProgressEXIFValue.IsVisible = show;
         prgBarEXIF.IsVisible = show;
@@ -327,7 +482,9 @@ public partial class MainPage : ContentPage
     private void schFile_TextChanged(object sender, TextChangedEventArgs e)
     {
         // Refresh the view
-        cvResults.ItemsSource = foundFiles.Where(f => f.Name.ToLower().Contains(e.NewTextValue.ToLower())).ToList().Take(10);
+        List<DriveFile> filteredList = foundFiles.Where(f => f.Name.ToLower().Contains(e.NewTextValue.ToLower())).ToList();
+        cvResults.ItemsSource = filteredList.Take(cvFoundFilesDisplay);
+        cvResults.Header = $"Filtered {filteredList.Count} {(filteredList.Count > 1 ? "files" : "file")} out of {foundFiles.Count} - showing first {cvFoundFilesDisplay} :";
     }
 
     // a cvResults Button has been clicked
@@ -410,7 +567,7 @@ public partial class MainPage : ContentPage
                 txtAddPref.Text = "";
 
                 // Save the Prefs
-                string strPrefs= string.Join(";", targetFolderList.Select(x => x.Name).ToList());
+                string strPrefs = string.Join(";", targetFolderList.Select(x => x.Name).ToList());
                 Preferences.Set("prefTargetFolderList", strPrefs);
 
                 // Refresh the Prefs
@@ -443,7 +600,7 @@ public partial class MainPage : ContentPage
             targetFolderList.Add(new PrefFolder { Name = aPref, IsChecked = false });
 
         // Refresh the prefs
-        RefreshCvPrefs();    
+        RefreshCvPrefs();
 
         await DisplayAlert("Default Prefs", $"Preferences have been set to Default.", "OK");
     }
@@ -452,7 +609,7 @@ public partial class MainPage : ContentPage
     private async void btnResetPrefs_Clicked(object sender, EventArgs e)
     {
         // Set the pref to nothing
-        Preferences.Set("prefTargetFolderList","");
+        Preferences.Set("prefTargetFolderList", "");
 
         // Clear the items in targetFolder
         targetFolderList = new List<PrefFolder>();
@@ -517,9 +674,9 @@ public partial class MainPage : ContentPage
     {
         PrefFolder theFolder;
         if (sender is CheckBox)
-        { 
-        CheckBox theCheckbox = (CheckBox)sender;
-        theFolder = (PrefFolder)theCheckbox.BindingContext;
+        {
+            CheckBox theCheckbox = (CheckBox)sender;
+            theFolder = (PrefFolder)theCheckbox.BindingContext;
         }
         else
         {
@@ -536,13 +693,13 @@ public partial class MainPage : ContentPage
     // FIND SD CARD NAME ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #region FIND SD CARD NAME
     private void btnFindSDPath(object sender, EventArgs e)
-	{
+    {
         // Drives which will be found -- /storage/emulated/0/Android/data is the internal storage
         List<DriveFile> targetDrives = new List<DriveFile>();
 
         // Get mounting points
         string[] logicalDrives = Environment.GetLogicalDrives();
-        
+
         // Exceptions
         List<LogLine> exceptions = new List<LogLine>();
 
@@ -561,23 +718,25 @@ public partial class MainPage : ContentPage
             catch (Exception ex)
             {
                 //if (drv.Contains("/storage/emulated/0/Android/data"))
-                    exceptions.Add(new LogLine { Drive = drv, ExceptionMessage = ex.Message });
+                exceptions.Add(new LogLine { Drive = drv, ExceptionMessage = ex.Message });
             }
         }
 
         // Feed the found drives in the collection view
         cvDrives.ItemsSource = targetDrives;
-        lblFolder.Text = $"'{txtSearchFolder.Text}' found in {targetDrives.Count} drive{(targetDrives.Count > 1 ? "s":"")}";
+        lblFolder.Text = $"'{txtSearchFolder.Text}' found in {targetDrives.Count} drive{(targetDrives.Count > 1 ? "s" : "")}";
 
         // Hide the rest of the forms
         ShowPartII(false);
         ShowPartIII(false);
         ShowPartIV(false);
-        ShowPartV(false);
     }
+    #endregion
 
-    // A Mount Name button has been clicked, display the form of the next part
-    private void cvButton_Clicked(object sender, EventArgs e)
+    // FIND FOLDERS CONTENTS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #region FIND FOLDERS CONTENTS
+    // A Mount Name button has been clicked, search it
+    private async void cvButton_Clicked(object sender, EventArgs e)
     {
         Button button = sender as Button;
         DriveFile selectedDrive = button.BindingContext as DriveFile;
@@ -585,19 +744,14 @@ public partial class MainPage : ContentPage
         // Assign the invisible value
         lblRootFolder.Text = selectedDrive.Name;
 
-        ShowPartII(true);
-        ShowPartIII(false);
-        ShowPartIV(false);
-        ShowPartV(false);
-    }
-    #endregion
-
-    // FOLDERS SEARCH ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    #region FOLDERS SEARCH
-    private async void btnSearchFolders_Clicked(object sender, EventArgs e)
-    {
         // File extensions to search for
-        string[] validExtensions = { ".jpg", ".jpeg", ".png", ".gif" };
+        //string[] validExtensions = { ".jpg", ".jpeg", ".png", ".gif" };
+        List<string> validExtensions = new List<string>();
+        if (chkJpg.IsChecked) validExtensions.Add(lblchkJpg.Text);
+        if (chkJpeg.IsChecked) validExtensions.Add(lblchkJpeg.Text);
+        if (chkPng.IsChecked) validExtensions.Add(lblchkPng.Text);
+        if (chkGif.IsChecked) validExtensions.Add(lblchkGif.Text);
+        if (chkMp4.IsChecked) validExtensions.Add(lblchkMp4.Text);
 
         // See Android/MainActivity.cs for Write Authorization
         // Directory.CreateDirectory("/storage/3439-3532/BEB");
@@ -608,16 +762,15 @@ public partial class MainPage : ContentPage
         // Files found will be stored there
         foundFiles = new List<DriveFile>();
 
-        // Lists of Exception
+        // New batch of Exception
         exceptList = new List<LogLine>();
 
-        List<PrefFolder>targetFolderListChecked = targetFolderList.Where(x => x.IsChecked).ToList();
+        List<PrefFolder> targetFolderListChecked = targetFolderList.Where(x => x.IsChecked).ToList();
         int cntFolderChecked = targetFolderListChecked.Count();
 
-        ShowPartII(true);
-        ShowPartIII(cntFolderChecked > 0);
+        ShowPartII(cntFolderChecked > 0);
+        ShowPartIII(false);
         ShowPartIV(false);
-        ShowPartV(false);
 
         if (targetFolderListChecked.Count == 0)
             await DisplayAlert("Alert", "No target folders set. Check in the Settings Panel to add some.", "OK");
@@ -659,52 +812,8 @@ public partial class MainPage : ContentPage
                         // Only take the files in scope
                         if (validExtensions.Contains(new FileInfo(aFile).Extension.ToLower()))
                         {
-                            DriveFile aDriveFile = new DriveFile();
-                            // BASIC DATA ====================================================================
-                            aDriveFile.FullPath = aFile;
-                            aDriveFile.Name = System.IO.Path.GetFileName(aFile);
-                            aDriveFile.Folder = aTargetFolder.Name;
-                            aDriveFile.Created = File.GetCreationTime(aFile);
-                            aDriveFile.Modified = File.GetLastWriteTime(aFile);
-                            aDriveFile.Extension = new FileInfo(aFile).Extension;
-
-                            // EXIF DATA =====================================================================
-                            // Use of Nuget : EXIFLibNet : GET
-                            try
-                            {
-                                var exifFile = ImageFile.FromFile(aFile);
-                                if (aDriveFile.Extension.ToLower() == ".png")
-                                {
-                                    ExifProperty tagPng = exifFile.Properties.Get(ExifTag.PNGCreationTime);
-                                    if (tagPng != null)
-                                    {
-                                        // :
-                                        aDriveFile.DateTimeOriginal = DateTime.ParseExact(tagPng.Value.ToString(),
-                                                                              "yyyy:MM:dd HH:mm:ss",
-                                                                              System.Globalization.CultureInfo.InvariantCulture);
-                                    }
-                                }
-                                else if (aDriveFile.Extension.ToLower() == ".jpg" || aDriveFile.Extension.ToLower() == ".jpeg")
-                                {
-                                    ExifProperty tagJpg = exifFile.Properties.Get(ExifTag.DateTimeOriginal);
-                                    if (tagJpg != null)
-                                    {
-                                        aDriveFile.DateTimeOriginal = (tagJpg as ExifDateTime).Value;
-                                    }
-                                }
-                                else if (aDriveFile.Extension.ToLower() == ".gif")
-                                {
-                                    // Field does not exist
-                                }
-                                else
-                                {
-                                    aDriveFile.DateTimeOriginal = null;
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                exceptList.Add(new LogLine { Drive = aDriveFile.FullPath, ExceptionMessage = ex.Message });
-                            }
+                            // Get the file with its data
+                            DriveFile aDriveFile = ReadEXIFforFile(aFile);
 
                             // FILTERS =====================================================================
                             // If the date time is null : to be set : add it to the list
@@ -753,11 +862,11 @@ public partial class MainPage : ContentPage
             foundFiles = foundFiles.OrderBy(x => x.FullPath).ToList();
 
             // Feed the found drives in the collection view
-            cvResults.Header = $"{foundFiles.Count} {(foundFiles.Count > 1 ? "files" : "file")} found - showing first 10";
-            cvResults.ItemsSource = foundFiles.Take(10);
+            cvResults.Header = $"{foundFiles.Count} {(foundFiles.Count > 1 ? "files" : "file")} found - showing first {cvFoundFilesDisplay} :";
+            cvResults.ItemsSource = foundFiles.Take(cvFoundFilesDisplay);
 
             // Show the rest of the form
-            ShowPartIV(true);
+            ShowPartIII(true);
 
             // DO IT !
             // Install Nuget plugin.maui.audio and put the file in the Resource/Raw folder
@@ -766,7 +875,9 @@ public partial class MainPage : ContentPage
             audioPlayerTick.Play();
         }
     }
+    #endregion
 
+    // Log the results of the search
     private async void btnLog_Clicked(object sender, EventArgs e)
     {
         // Log Part : Files
@@ -803,26 +914,26 @@ public partial class MainPage : ContentPage
 
         await DisplayAlert("Export Done", $"File Export is done in {logFile}.\r\n Errors in {logFileError} ", "Kewl");
     }
-    #endregion
 
     // ADD EXIF DATA ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #region ADD EXIF DATA
+    // Batch version, with Dewitt button clicked
     private async void btnDewitt_Clicked(object sender, EventArgs e)
     {
         var result = await DisplayAlert("DEWITT ?", "DEWITT ?", "DEWITT !!", "Nah.");
         if (result)
         {
-            ShowPartV(true);
+            ShowPartIV(true);
 
-            int cnt = 0;
-            int cntTotal = 0;
+            // Start new bash of logs
             List<LogLine> successEXIFList = new List<LogLine>();
             List<LogLine> exceptEXIFList = new List<LogLine>();
 
+            int cnt = 0;
+            int cntTotal = 0;
+
             foreach (DriveFile aDriveFile in foundFiles)
             {
-                string AdditionnalLog = "";
-
                 // Progress EXIF
                 cntTotal++;
                 lblProgressEXIFValue.Text = $"{cntTotal} / {foundFiles.Count()}";
@@ -830,87 +941,12 @@ public partial class MainPage : ContentPage
                 lblCurrentEXIF.Text = $"{aDriveFile.Folder}";
                 await prgBarEXIF.ProgressTo((double)cntTotal / foundFiles.Count(), 10, Easing.Linear);
 
-                try
-                {
-                    // Add EXIF Tags for images lacking one or if Overwrite is checked
-                    if (aDriveFile.DateTimeOriginal == null || chkOverwrite.IsChecked)
-                    {
-                        // Part I : Use Regex to identify file naming type and extract date from file name
-                        string fileWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(aDriveFile.Name);
-
-                        DateTime? newDate = GetDateTimeFromFileName(fileWithoutExtension);
-                        if (newDate == null)
-                        {
-                            // Unable to parse
-                            exceptEXIFList.Add(new LogLine { Drive = aDriveFile.FullPath, ExceptionMessage = "Unable to parse." });
-                        }
-                        else
-                        {
-                            // Part II : Add EXIF data. Method depends on the file type
-                            if (aDriveFile.Extension.ToLower() == ".jpg" || aDriveFile.Extension.ToLower() == ".jpeg")
-                            {
-                                if (chkForReal.IsChecked)
-                                {
-                                    var fileJpg = ImageFile.FromFile(aDriveFile.FullPath);
-                                    fileJpg.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
-                                    fileJpg.Save(aDriveFile.FullPath);
-                                }
-                                else
-                                {
-                                    AdditionnalLog = " - SKIPPED";
-                                }
-                            }
-                            else if (aDriveFile.Extension.ToLower() == ".png")
-                            {
-                                if (chkForReal.IsChecked)
-                                {
-                                    // To Implement
-                                    AdditionnalLog = " - TO IMPLEMENT";
-                                    // Do not work : ":"
-                                    //DateTime newDateTimePNG = new DateTime(2023, 03, 30);
-                                    //var filePng = ImageFile.FromFile(pathPNG);
-                                    //filePng.Properties.Set(ExifTag.PNGCreationTime, "2021:06:30 13:37:00");
-                                    //filePng.Save(pathPNG);
-                                }
-                                else
-                                {
-                                    AdditionnalLog = " - SKIPPED - TO IMPLEMENT";
-                                }
-                            }
-                            else if (aDriveFile.Extension.ToLower() == ".gif")
-                            {
-                                if (chkForReal.IsChecked)
-                                {
-                                    // To Implement
-                                    File.SetCreationTime(aDriveFile.FullPath, newDate.Value);
-                                    File.SetLastWriteTime(aDriveFile.FullPath, newDate.Value);
-                                    File.SetLastAccessTime(aDriveFile.FullPath, newDate.Value);
-                                    AdditionnalLog = " - SKIPPED - TO IMPLEMENT";
-                                }
-                                else
-                                {
-                                    AdditionnalLog = " - SKIPPED";
-                                }
-                            }
-
-                            // Log the result
-                            cnt++;
-                            successEXIFList.Add(new LogLine
-                            {
-                                Drive = aDriveFile.FullPath,
-                                ExceptionMessage = $"from {(aDriveFile.DateTimeOriginal == null ? "null" : aDriveFile.DateTimeOriginal.Value.ToString("yyyy/MM/dd HH:mm:ss"))} " +
-                                                   $"to => {newDate.Value.ToString("yyyy/MM/dd HH:mm:ss")}" +
-                                                   $"{AdditionnalLog}"
-                            });
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    exceptEXIFList.Add(new LogLine { Drive = aDriveFile.FullPath, ExceptionMessage = ex.Message });
-                }
+                // Do the Work
+                WriteEXIFforFile(aDriveFile, true);
+                cnt++;
             }
 
+            //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             // Log Part : Success
             string logFileSuccess = $"{lblRootFolder.Text}/PicturesDateFixer/Files_Success_EXIF.txt";
             if (File.Exists(logFileSuccess))
@@ -939,6 +975,8 @@ public partial class MainPage : ContentPage
                 }
             }
 
+            //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            // Display Alert
             if (chkForReal.IsChecked)
             {
                 await DisplayAlert("EXIF Tagging Done", $"{cnt} out of {cntTotal} done.\r\n" +
@@ -953,7 +991,7 @@ public partial class MainPage : ContentPage
             }
             else
             {
-                await DisplayAlert("EXIF Simulation Done", $"{cnt} out of {cntTotal} done.\r\n" +
+                await DisplayAlert("EXIF *SIMULATION* Done", $"{cnt} out of {cntTotal} done.\r\n" +
                                                            $"\r\n" +
                                                            $"Results loggued in :\r\n" +
                                                            $"{logFileSuccess}\r\n" +
@@ -965,8 +1003,19 @@ public partial class MainPage : ContentPage
             }
         }
     }
+ 
+    // From the Result page, just for one file
+    private void btnRewriteEXIFforFile_Clicked(object sender, EventArgs e)
+    {
+        // Fetch the clicked file
+        Button theButton = (Button)sender;
+        DriveFile aDriveFile = (DriveFile)theButton.BindingContext;
 
+        // Do the Work for on file
+        WriteEXIFforFile(aDriveFile, false);
 
+        // TODO : refresh the item in foundFiles
+    }
     #endregion
 }
 
