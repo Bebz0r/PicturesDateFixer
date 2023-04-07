@@ -1,19 +1,9 @@
-﻿using System.Threading.Tasks;
-using System.Threading;
-using System.IO;
-using System.Text;
-using System;
-using Microsoft.Maui.Controls.PlatformConfiguration;
-using static System.Net.Mime.MediaTypeNames;
-using Microsoft.Maui.Controls.Shapes;
-using Plugin.Maui.Audio;
+﻿using Plugin.Maui.Audio;
 using ExifLibrary;
 using System.Text.RegularExpressions;
-using CommunityToolkit.Maui.Core.Primitives;
-using CommunityToolkit.Maui.Alerts;
-using Microsoft.Maui.Controls.Compatibility;
-using System.Reflection.Metadata;
 using System.Diagnostics;
+using MetadataExtractor;
+using MetadataExtractor.Formats.Exif;
 
 namespace PicturesDateFixer;
 
@@ -64,6 +54,10 @@ public partial class MainPage : ContentPage
     //         base.OnCreate(savedInstanceState);
     //     }
     // }
+
+    // EXIF MANIPULATION ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // For reading purposes : MetadataExtractor 2.7.2 NuGet
+    // For writing purposes : ExifLibNet 2.1.4 NuGet
     #endregion
 
     // Fill which will be found
@@ -99,11 +93,26 @@ public partial class MainPage : ContentPage
         RefreshCvPrefs();
 
         // Create the Log Folder
-        Directory.CreateDirectory("/storage/3439-3532/PicturesDateFixer");
+        System.IO.Directory.CreateDirectory("/storage/3439-3532/PicturesDateFixer");
     }
 
     // EXIF READING AND EXTRACTION, AND REGEX ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #region EXIF READING AND EXTRACTION, AND REGEX
+    // This function dump to the Debug window all the EXIF Data of a file
+    private void DebugAllEXIFforFile(string FilePath)
+    {
+        Debug.WriteLine("-------------------------------");
+        Debug.WriteLine($"GOING THROUGH ALL TAGS FOR {FilePath}...");
+
+        IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(FilePath);
+        foreach (var directory in directories)
+            foreach (var tag in directory.Tags)
+                Debug.WriteLine($"{directory.Name} - {tag.Name} = {tag.Description}");
+
+        // Finished
+        Debug.WriteLine("DONE !");
+    }
+
     // This function will read EXIF File Data.
     private DriveFile ReadEXIFforFile(string FilePath)
     {
@@ -120,27 +129,25 @@ public partial class MainPage : ContentPage
         // Use of Nuget : EXIFLibNet : GET
         try
         {
-
             if (aDriveFile.Extension.ToLower() == ".jpg" || aDriveFile.Extension.ToLower() == ".jpeg")
             {
-                var jpgFile = ImageFile.FromFile(FilePath);
-                ExifProperty tagJpg = jpgFile.Properties.Get(ExifTag.DateTimeOriginal);
-                if (tagJpg != null)
-                {
-                    aDriveFile.DateTimeOriginal = (tagJpg as ExifDateTime).Value;
-                }
+                // Dump all EXIF Found in the Debug
+                DebugAllEXIFforFile(FilePath);
+
+                IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(FilePath);
+                var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
+                var theDate = subIfdDirectory?.GetDescription(ExifDirectoryBase.TagDateTimeOriginal);
+                aDriveFile.DateTimeOriginal = (theDate == null ? null : DateTime.ParseExact(theDate, "yyyy:MM:dd HH:mm:ss", null));
             }
             else if (aDriveFile.Extension.ToLower() == ".png")
             {
-                var pngFile = ImageFile.FromFile(FilePath);
-                ExifProperty tagPng = pngFile.Properties.Get(ExifTag.PNGCreationTime);
-                if (tagPng != null)
-                {
-                    // Warning : the yyyy MM dd separator IS ':'
-                    aDriveFile.DateTimeOriginal = DateTime.ParseExact(tagPng.Value.ToString(),
-                                                          "yyyy:MM:dd HH:mm:ss",
-                                                          System.Globalization.CultureInfo.InvariantCulture);
-                }
+                // Dump all EXIF Found in the Debug
+                DebugAllEXIFforFile(FilePath);
+
+                IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(FilePath);
+                var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
+                var theDate = subIfdDirectory?.GetDescription(ExifDirectoryBase.TagDateTimeOriginal);
+                aDriveFile.DateTimeOriginal = (theDate == null ? null : DateTime.ParseExact(theDate, "yyyy:MM:dd HH:mm:ss", null));
             }
             else if (aDriveFile.Extension.ToLower() == ".gif")
             {
@@ -213,9 +220,12 @@ public partial class MainPage : ContentPage
                         {
                             // To Implement
                             AdditionnalLog = " - TO IMPLEMENT";
-                            //var filePng = ImageFile.FromFile(aDriveFile.FullPath);
-                            //filePng.Properties.Set(ExifTag.PNGCreationTime,newDate.Value);
-                            //filePng.Save(aDriveFile.FullPath);
+                            var filePng = ImageFile.FromFile(aDriveFile.FullPath);
+                            filePng.Properties.Set(ExifTag.PNGCreationTime,newDate.Value);
+                            filePng.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
+                            filePng.Properties.Set(ExifTag.DateTime, newDate.Value);
+                            filePng.Save(aDriveFile.FullPath);
+                            //File.SetLastWriteTime(aDriveFile.FullPath, newDate.Value);
                         }
                         else
                         {
@@ -492,9 +502,6 @@ public partial class MainPage : ContentPage
         Button theButton = (Button)sender;
         DriveFile theFile = (DriveFile)theButton.BindingContext;
 
-        // Get the file
-        var exifFile = ImageFile.FromFile(theFile.FullPath);
-
         // Log Part : EXIF Data
         string logFileEXIF = $"{lblRootFolder.Text}/PicturesDateFixer/EXIF_Data.txt";
         if (File.Exists(logFileEXIF))
@@ -503,29 +510,13 @@ public partial class MainPage : ContentPage
         using (var sw = new StreamWriter(logFileEXIF))
         {
             sw.WriteLine($"EXIF Tags for {theFile.FullPath} :");
-            Debug.WriteLine("-------------------------------");
-            Debug.WriteLine("GOING THROUGH ALL TAGS...");
-            foreach (ExifTag aTag in (ExifTag[])Enum.GetValues(typeof(ExifTag)))
-            {
-                ExifProperty tagPng = exifFile.Properties.Get(aTag);
-                if (tagPng != null)
-                {
-                    // :
-                    //DateTime DateTimeOriginal = DateTime.ParseExact(tagPng.Value.ToString(),
-                    //                                        "yyyy:MM:dd HH:mm:ss",
-                    //                                        System.Globalization.CultureInfo.InvariantCulture);
-                    sw.WriteLine($"GOT {aTag.ToString()} ==> {tagPng.Value.ToString()}");
-                    Debug.WriteLine($"GOT {aTag.ToString()} ==> {tagPng.Value.ToString()}");
-                }
-                else
-                {
-                    sw.WriteLine($"NO : {aTag.ToString()}");
-                    Debug.WriteLine($"NO : {aTag.ToString()}");
-                }
-            }
-        }
-        Debug.WriteLine("DONE !");
 
+            IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(theFile.FullPath);
+            foreach (var directory in directories)
+                foreach (var tag in directory.Tags)
+                    sw.WriteLine($"{directory.Name} - {tag.Name} = {tag.Description}");
+        }
+        // Done
         await DisplayAlert("Export Done", $"File Export is done in {logFileEXIF}.", "Kewl");
 
     }
@@ -708,7 +699,7 @@ public partial class MainPage : ContentPage
             try
             {
                 // Get the mounting points root directories
-                string[] theDirectories = Directory.GetDirectories(drv, "*");
+                string[] theDirectories = System.IO.Directory.GetDirectories(drv, "*");
                 // For each directory, match the searched one if found
                 foreach (var aDirectory in theDirectories)
                     if (aDirectory.ToLower().EndsWith("/" + txtSearchFolder.Text.ToLower().Trim()))
@@ -795,7 +786,7 @@ public partial class MainPage : ContentPage
                 {
                     // Get the files
                     //string[] theFiles = Directory.GetFiles("/storage/3439-3532/DCIM/Camera", "*");
-                    string[] theFiles = Directory.GetFiles(targetFolder, "*");
+                    string[] theFiles = System.IO.Directory.GetFiles(targetFolder, "*");
 
                     int cnt = 0;
                     // For each directory, match the searched one if found
