@@ -221,9 +221,10 @@ public partial class MainPage : ContentPage
                             // To Implement
                             AdditionnalLog = " - TO IMPLEMENT";
                             var filePng = ImageFile.FromFile(aDriveFile.FullPath);
-                            filePng.Properties.Set(ExifTag.PNGCreationTime,newDate.Value);
-                            filePng.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
-                            filePng.Properties.Set(ExifTag.DateTime, newDate.Value);
+                            //filePng.Properties.Set(ExifTag.PNGCreationTime,newDate.Value);
+                            //filePng.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
+                            //filePng.Properties.Set(ExifTag.DateTime, newDate.Value);
+                            filePng.Properties.Set(new PNGText(ExifTag.PNGCreationTime, "Creation Time", newDate.Value.ToString("yyyy:MM:dd HH:mm:ss"), false));
                             filePng.Save(aDriveFile.FullPath);
                             //File.SetLastWriteTime(aDriveFile.FullPath, newDate.Value);
                         }
