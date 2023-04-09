@@ -1,7 +1,4 @@
-﻿using CommunityToolkit.Maui.Core.Primitives;
-
-namespace PicturesDateFixer;
-
+﻿namespace PicturesDateFixer;
 public partial class MainPage
 {
     public class DriveFile

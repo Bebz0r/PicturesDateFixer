@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using CommunityToolkit.Maui;
+//using CommunityToolkit.Maui;
 namespace PicturesDateFixer;
 
 public static class MauiProgram
@@ -10,7 +10,7 @@ public static class MauiProgram
 		builder
 			.UseMauiApp<App>()
             // Initialize the .NET MAUI Community Toolkit by adding the below line of code
-            .UseMauiCommunityToolkit()
+            //.UseMauiCommunityToolkit()
             .ConfigureFonts(fonts =>
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

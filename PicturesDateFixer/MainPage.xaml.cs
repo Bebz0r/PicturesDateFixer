@@ -11,6 +11,10 @@ public partial class MainPage : ContentPage
 {
     // README : Features
     #region README
+    // SCREEN ORIENTATION ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ANDROID : In Platforms > Android > MainActivity > Activity definition :  Added ScreenOrientation = ScreenOrientation.Portrait
+    // iOS : In Platforms > iOS, open info.plist, then find Device Orientation
+
     // STATUS BAR COLOR ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Change status bar color ? Add the CommunityToolkit.Maui Nuget
     // Then add it in the MauiProgram.cs :
@@ -205,6 +209,7 @@ public partial class MainPage : ContentPage
                     {
                         if ((fromDewitt & chkForReal.IsChecked) || !fromDewitt)
                         {
+                            // Use ExifLibNet
                             var fileJpg = ImageFile.FromFile(aDriveFile.FullPath);
                             fileJpg.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
                             fileJpg.Save(aDriveFile.FullPath);
@@ -218,15 +223,28 @@ public partial class MainPage : ContentPage
                     {
                         if ((fromDewitt & chkForReal.IsChecked) || !fromDewitt)
                         {
-                            // To Implement
-                            AdditionnalLog = " - TO IMPLEMENT";
-                            var filePng = ImageFile.FromFile(aDriveFile.FullPath);
-                            //filePng.Properties.Set(ExifTag.PNGCreationTime,newDate.Value);
-                            //filePng.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
-                            //filePng.Properties.Set(ExifTag.DateTime, newDate.Value);
-                            filePng.Properties.Set(new PNGText(ExifTag.PNGCreationTime, "Creation Time", newDate.Value.ToString("yyyy:MM:dd HH:mm:ss"), false));
-                            filePng.Save(aDriveFile.FullPath);
-                            //File.SetLastWriteTime(aDriveFile.FullPath, newDate.Value);
+                            bool useExifLibNet = false;
+
+                            // ExifLibNet version : works for windows, but do not with Android Gallery
+                            if (useExifLibNet)
+                            {
+                                var filePng = ImageFile.FromFile(aDriveFile.FullPath);
+                                filePng.Properties.Set(ExifTag.PNGCreationTime, newDate.Value);
+                                filePng.Properties.Set(ExifTag.DateTimeOriginal, newDate.Value);
+                                filePng.Properties.Set(ExifTag.DateTime, newDate.Value);
+                                filePng.Properties.Set(new PNGText(ExifTag.PNGCreationTime, "Creation Time", newDate.Value.ToString("yyyy:MM:dd HH:mm:ss"), false));
+                                File.SetLastWriteTime(aDriveFile.FullPath, newDate.Value);
+                                filePng.Save(aDriveFile.FullPath);
+                            }
+                            else
+                            {
+                                // ImageSharp version : works but VERY, VERY slow
+                                using (var img = SixLabors.ImageSharp.Image.Load(aDriveFile.FullPath))
+                                {
+                                    img.Metadata.ExifProfile.SetValue(SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.DateTimeOriginal, newDate.Value.ToString("yyyy:MM:dd HH:mm:ss"));
+                                    img.Save(aDriveFile.FullPath);
+                                }
+                            }
                         }
                         else
                         {
@@ -374,11 +392,11 @@ public partial class MainPage : ContentPage
     private void btnMenuMain_Clicked(object sender, EventArgs e)
     {
         btnMenuMain.Source = "main.png";
-        bxMenuMain.Color = Color.FromArgb("#9a0089");
+        bxMenuMain.Color = Microsoft.Maui.Graphics.Color.FromArgb("#9a0089");
         btnMenuSettings.Source = "settings_disabled.png";
-        bxMenuSettings.Color = Color.FromArgb("#00FFFFFF");
+        bxMenuSettings.Color = Microsoft.Maui.Graphics.Color.FromArgb("#00FFFFFF");
         btnMenuResults.Source = "results_disabled.png";
-        bxMenuResults.Color = Color.FromArgb("#00FFFFFF");
+        bxMenuResults.Color = Microsoft.Maui.Graphics.Color.FromArgb("#00FFFFFF");
 
         btnMenuResults.IsVisible = (foundFiles.Count() != 0);
         lblMenuResults.IsVisible = (foundFiles.Count() != 0);
@@ -391,11 +409,11 @@ public partial class MainPage : ContentPage
     private void btnMenuSettings_Clicked(object sender, EventArgs e)
     {
         btnMenuMain.Source = "main_disabled.png";
-        bxMenuMain.Color = Color.FromArgb("#00FFFFFF");
+        bxMenuMain.Color = Microsoft.Maui.Graphics.Color.FromArgb("#00FFFFFF");
         btnMenuSettings.Source = "settings.png";
-        bxMenuSettings.Color = Color.FromArgb("#9a0089");
+        bxMenuSettings.Color = Microsoft.Maui.Graphics.Color.FromArgb("#9a0089");
         btnMenuResults.Source = "results_disabled.png";
-        bxMenuResults.Color = Color.FromArgb("#00FFFFFF");
+        bxMenuResults.Color = Microsoft.Maui.Graphics.Color.FromArgb("#00FFFFFF");
 
         btnMenuResults.IsVisible = (foundFiles.Count() != 0);
         lblMenuResults.IsVisible = (foundFiles.Count() != 0);
@@ -408,11 +426,11 @@ public partial class MainPage : ContentPage
     private void btnMenuResults_Clicked(object sender, EventArgs e)
     {
         btnMenuMain.Source = "main_disabled.png";
-        bxMenuMain.Color = Color.FromArgb("#00FFFFFF");
+        bxMenuMain.Color = Microsoft.Maui.Graphics.Color.FromArgb("#00FFFFFF");
         btnMenuSettings.Source = "settings_disabled.png";
-        bxMenuSettings.Color = Color.FromArgb("#00FFFFFF");
+        bxMenuSettings.Color = Microsoft.Maui.Graphics.Color.FromArgb("#00FFFFFF");
         btnMenuResults.Source = "results.png";
-        bxMenuResults.Color = Color.FromArgb("#9a0089");
+        bxMenuResults.Color = Microsoft.Maui.Graphics.Color.FromArgb("#9a0089");
 
         btnMenuResults.IsVisible = (foundFiles.Count() != 0);
         lblMenuResults.IsVisible = (foundFiles.Count() != 0);
@@ -744,12 +762,6 @@ public partial class MainPage : ContentPage
         if (chkGif.IsChecked) validExtensions.Add(lblchkGif.Text);
         if (chkMp4.IsChecked) validExtensions.Add(lblchkMp4.Text);
 
-        // See Android/MainActivity.cs for Write Authorization
-        // Directory.CreateDirectory("/storage/3439-3532/BEB");
-        // using FileStream outputStream = File.OpenWrite("/storage/3439-3532/BEB/test.txt");
-        // using StreamWriter streamWriter = new StreamWriter(outputStream);
-        // await streamWriter.WriteAsync("OKAY");
-
         // Files found will be stored there
         foundFiles = new List<DriveFile>();
 
@@ -923,85 +935,90 @@ public partial class MainPage : ContentPage
             int cnt = 0;
             int cntTotal = 0;
 
-            if (foundFiles.Where(x => x.Extension != ".mp4").Any())
-                await DisplayAlert("Warning : mp4 files", "mp4 where found but are not supported (yet) :\r\n\r\n" +
-                                   "A way to get/set the 'Media Created' field of the files have to be found.", "OK");
+            if (foundFiles.Count(x => x.Extension == ".mp4") > 0)
+                await DisplayAlert("Warning : mp4 files", "mp4 were found but are not supported (yet) :\r\n\r\n" +
+                                   "A way to get/set the 'Media Created' field of the files has to be found.", "OK");
 
-            if (foundFiles.Where(x => x.Extension != ".png").Any())
-                await DisplayAlert("Warning : png files", "png where found but are not fully supported (yet) :\r\n\r\n" +
-                                   "ExifTag.PNGCreationTime can be fetched/set, but is not the field used to group pictures.\r\n\r\n" +
-                                   "Modifying it in the Gallery App to a specific date then parsing all the ExifTags yields no result.\r\n\r\n" +
-                                   "Loading the modified png file in exif.tools shows the updated value as DateTimeOriginal though, like the jpg, " +
-                                   "but ExifTag.DateTimeOriginal yields nothing.", "OK");
-
-            foreach (DriveFile aDriveFile in foundFiles)
+            bool goOn = true;
+            int pngFiles = foundFiles.Count(x => x.Extension == ".png");
+            if (pngFiles > 0 )
             {
-                // Progress EXIF
-                cntTotal++;
-                lblProgressEXIFValue.Text = $"{cntTotal} / {foundFiles.Count()}";
-                lblProgressEXIFPercent.Text = $"{Math.Round((double)cntTotal / foundFiles.Count() * 100)}%";
-                lblCurrentEXIF.Text = $"{aDriveFile.Folder}";
-                await prgBarEXIF.ProgressTo((double)cntTotal / foundFiles.Count(), 10, Easing.Linear);
-
-                // Do the Work
-                WriteEXIFforFile(aDriveFile, true);
-                cnt++;
+                goOn = await DisplayAlert("Warning : png files", $"png were found ({pngFiles} {(pngFiles > 1 ? "files" : "file")}).\r\n\r\n" +
+                                   "PNG Tag writing uses specifically the ImageSharp library, which is VERY slow on Android (~10 secs for one file).\r\n\r\n" +
+                                   "So this can take a while. Are you sure you want to proceed ?", "OK", "Cancel");
             }
 
-            //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // Log Part : Success
-            string logFileSuccess = $"{lblRootFolder.Text}/PicturesDateFixer/Files_Success_EXIF.txt";
-            if (File.Exists(logFileSuccess))
-                File.Delete(logFileSuccess);
-
-            using (var sw = new StreamWriter(logFileSuccess))
+            if (goOn)
             {
-                sw.WriteLine("Realm|Result");
-                foreach (LogLine aSuccess in successEXIFList)
+                foreach (DriveFile aDriveFile in foundFiles)
                 {
-                    sw.WriteLine($"{aSuccess.Drive}|{aSuccess.ExceptionMessage}");
+                    // Progress EXIF
+                    cntTotal++;
+                    lblProgressEXIFValue.Text = $"{cntTotal} / {foundFiles.Count()}";
+                    lblProgressEXIFPercent.Text = $"{Math.Round((double)cntTotal / foundFiles.Count() * 100)}%";
+                    lblCurrentEXIF.Text = $"{aDriveFile.Folder}";
+                    await prgBarEXIF.ProgressTo((double)cntTotal / foundFiles.Count(), 10, Easing.Linear);
+
+                    // Do the Work
+                    WriteEXIFforFile(aDriveFile, true);
+                    cnt++;
                 }
-            }
 
-            // Log Part : Errors
-            string logFileError = $"{lblRootFolder.Text}/PicturesDateFixer/Files_Errors_EXIF.txt";
-            if (File.Exists(logFileError))
-                File.Delete(logFileError);
+                //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                // Log Part : Success
+                string logFileSuccess = $"{lblRootFolder.Text}/PicturesDateFixer/Files_Success_EXIF.txt";
+                if (File.Exists(logFileSuccess))
+                    File.Delete(logFileSuccess);
 
-            using (var sw = new StreamWriter(logFileError))
-            {
-                sw.WriteLine("Realm|Error");
-                foreach (LogLine anException in exceptEXIFList)
+                using (var sw = new StreamWriter(logFileSuccess))
                 {
-                    sw.WriteLine($"{anException.Drive}|{anException.ExceptionMessage}");
+                    sw.WriteLine("Realm|Result");
+                    foreach (LogLine aSuccess in successEXIFList)
+                    {
+                        sw.WriteLine($"{aSuccess.Drive}|{aSuccess.ExceptionMessage}");
+                    }
                 }
-            }
 
-            //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // Display Alert
-            if (chkForReal.IsChecked)
-            {
-                await DisplayAlert("EXIF Tagging Done", $"{cnt} out of {cntTotal} done.\r\n" +
-                                                        $"\r\n" +
-                                                        $"Results loggued in :\r\n" +
-                                                        $"{logFileSuccess}\r\n" +
-                                                        $"\r\n" +
-                                                        $"{exceptEXIFList.Count} errors loggued in :\r\n" +
-                                                        $"{logFileError}\r\n" +
-                                                        $"\r\n" +
-                                                        $"Changes may take some time to reflect. Reboot device if needed.", "Kewl");
-            }
-            else
-            {
-                await DisplayAlert("EXIF *SIMULATION* Done", $"{cnt} out of {cntTotal} done.\r\n" +
-                                                           $"\r\n" +
-                                                           $"Results loggued in :\r\n" +
-                                                           $"{logFileSuccess}\r\n" +
-                                                           $"\r\n" +
-                                                           $"Possible errors ({exceptEXIFList.Count} ) loggued in :\r\n" +
-                                                           $"{logFileError}\r\n" +
-                                                           $"\r\n" +
-                                                           $"Review the results and relaunch with the 'Do It For Real !' checkbox ticked", "Kewl");
+                // Log Part : Errors
+                string logFileError = $"{lblRootFolder.Text}/PicturesDateFixer/Files_Errors_EXIF.txt";
+                if (File.Exists(logFileError))
+                    File.Delete(logFileError);
+
+                using (var sw = new StreamWriter(logFileError))
+                {
+                    sw.WriteLine("Realm|Error");
+                    foreach (LogLine anException in exceptEXIFList)
+                    {
+                        sw.WriteLine($"{anException.Drive}|{anException.ExceptionMessage}");
+                    }
+                }
+
+                //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                // Display Alert
+                if (chkForReal.IsChecked)
+                {
+                    await DisplayAlert("EXIF Tagging Done", $"{cnt} out of {cntTotal} done.\r\n" +
+                                                            $"\r\n" +
+                                                            $"Results loggued in :\r\n" +
+                                                            $"{logFileSuccess}\r\n" +
+                                                            $"\r\n" +
+                                                            $"{exceptEXIFList.Count} errors loggued in :\r\n" +
+                                                            $"{logFileError}\r\n" +
+                                                            $"\r\n" +
+                                                            $"Changes may take some time to reflect. Reboot device if needed.", "Kewl");
+                }
+                else
+                {
+                    await DisplayAlert("EXIF *SIMULATION* Done", $"{cnt} out of {cntTotal} done.\r\n" +
+                                                               $"\r\n" +
+                                                               $"Results loggued in :\r\n" +
+                                                               $"{logFileSuccess}\r\n" +
+                                                               $"\r\n" +
+                                                               $"Possible errors ({exceptEXIFList.Count} ) loggued in :\r\n" +
+                                                               $"{logFileError}\r\n" +
+                                                               $"\r\n" +
+                                                               $"Review the results and relaunch with the 'Do It For Real !' checkbox ticked", "Kewl");
+                }
             }
         }
     }
